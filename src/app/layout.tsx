@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Campus Virtual PNM",
-  description: "Plataforma de aprendizaje en línea PNM",
+  title: "Campus Virtual LP",
+  description: "Plataforma de aprendizaje en línea LP",
 }
 
 export default function RootLayout({
