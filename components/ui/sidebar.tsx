@@ -65,7 +65,7 @@ export function Sidebar() {
       <div className="h-14 border-b flex items-center px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-slate-800">
           <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center">
-            <span className="text-white text-xs font-bold">PNM</span>
+            <span className="text-white text-xs font-bold">LP</span>
           </div>
           <span>Campus Virtual</span>
         </Link>
