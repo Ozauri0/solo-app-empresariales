@@ -50,11 +50,6 @@ const sidebarLinks = [
     href: "/profile",
     icon: User,
   },
-  {
-    title: "Configuración",
-    href: "/settings",
-    icon: Settings,
-  },
 ]
 
 export function Sidebar() {
