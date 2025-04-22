@@ -2,7 +2,7 @@ import type React from "react"
 import { Sidebar } from "@/components/ui/sidebar"
 import { Header } from "@/components/ui/header"
 
-export default function DashboardLayout({
+export default function CoursesLayout({
   children,
 }: {
   children: React.ReactNode

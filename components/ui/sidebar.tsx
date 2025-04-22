@@ -96,7 +96,7 @@ export function Sidebar() {
           </div>
           <div>
             <p className="font-medium text-sm">Estudiante Demo</p>
-            <p className="text-xs text-muted-foreground">estudiante@pnm.edu</p>
+            <p className="text-xs text-muted-foreground">demo@alu.lp.cl</p>
           </div>
         </div>
       </div>
