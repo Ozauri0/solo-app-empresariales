@@ -52,11 +52,16 @@ const sidebarLinks = [
   },
 ]
 
-export function Sidebar() {
+export function Sidebar({ isMobile }: { isMobile?: boolean }) {
   const pathname = usePathname()
 
   return (
-    <div className="hidden lg:flex flex-col w-64 border-r bg-slate-50">
+    <div className={cn(
+      "flex flex-col border-r bg-slate-50 overflow-hidden",
+      isMobile 
+        ? "w-full h-full" 
+        : "hidden lg:flex fixed top-0 left-0 h-screen w-64"
+    )}>
       <div className="h-14 border-b flex items-center px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-slate-800">
           <div className="w-8 h-8 bg-slate-800 rounded-full flex items-center justify-center">
@@ -65,7 +70,7 @@ export function Sidebar() {
           <span>Campus Virtual</span>
         </Link>
       </div>
-      <div className="flex-1 py-4 px-2">
+      <div className="flex-1 py-4 px-2 overflow-y-auto">
         <nav className="space-y-1">
           {sidebarLinks.map((link) => (
             <Link
