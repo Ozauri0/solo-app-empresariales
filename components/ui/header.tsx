@@ -9,7 +9,7 @@ import { Sidebar } from "@/components/ui/sidebar"
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-10 h-14 border-b bg-white flex items-center px-4 lg:px-6">
+    <header className="sticky top-0 z-10 h-14 w-full border-b bg-white flex items-center px-4 lg:px-6">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="outline" size="icon" className="lg:hidden">
@@ -18,7 +18,7 @@ export function Header() {
           </Button>
         </SheetTrigger>
         <SheetContent className="p-0">
-          <Sidebar />
+          <Sidebar isMobile={true} />
         </SheetContent>
       </Sheet>
 
