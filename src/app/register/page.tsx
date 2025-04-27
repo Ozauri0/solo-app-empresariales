@@ -1,32 +1,26 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { toast } from 'sonner'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle } from 'lucide-react'
 
-export default function LoginPage() {
+export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
+    username: '',
     email: '',
-    password: ''
+    password: '',
+    name: '',
+    role: 'student'
   })
   const [loading, setLoading] = useState(false)
-
-  // Verificar si el usuario ya está autenticado
-  useEffect(() => {
-    const token = localStorage.getItem('token')
-    const user = localStorage.getItem('user')
-    
-    if (token && user) {
-      router.push('/dashboard')
-    }
-  }, [router])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -36,12 +30,19 @@ export default function LoginPage() {
     }))
   }
 
+  const handleRoleChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      role: value
+    }))
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/login', {
+      const response = await fetch('http://localhost:5000/api/users/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -52,33 +53,28 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        // Manejo específico de diferentes tipos de errores
-        if (response.status === 401) {
-          throw new Error('Correo electrónico o contraseña incorrectos')
-        } else {
-          throw new Error(data.message || 'Error al iniciar sesión')
-        }
+        throw new Error(data.message || 'Error al registrar usuario')
       }
 
-      // Si el login es exitoso, guardar el token y redirigir al dashboard
+      // Si el registro es exitoso, guardar el token y redirigir al dashboard
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
       
       // Mostrar mensaje de éxito con toast
-      toast.success('Inicio de sesión exitoso', {
-        description: 'Redirigiendo al dashboard...'
+      toast.success('Registro exitoso', {
+        description: 'Tu cuenta ha sido creada correctamente. Redirigiendo...'
       })
       
-      // Pequeña pausa para mostrar el toast antes de redirigir
+      // Pequeña pausa para mostrar el toast
       setTimeout(() => {
         router.push('/dashboard')
-      }, 1000)
+      }, 1500)
     } catch (err: any) {
-      console.error('Error de login:', err)
+      console.error('Error de registro:', err)
       
       // Mostrar mensaje de error con toast
-      toast.error('Error de inicio de sesión', {
-        description: err.message || 'No se pudo iniciar sesión',
+      toast.error('Error de registro', {
+        description: err.message || 'No se pudo completar el registro',
         icon: <AlertCircle className="h-5 w-5" />
       })
       
@@ -107,12 +103,36 @@ export default function LoginPage() {
 
         <Card className="w-full">
           <CardHeader>
-            <CardTitle>Iniciar Sesión</CardTitle>
-            <CardDescription>Ingresa tus credenciales para acceder a tu cuenta</CardDescription>
+            <CardTitle>Crear una cuenta</CardTitle>
+            <CardDescription>Complete el formulario para registrarse en nuestra plataforma</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="name">Nombre Completo</Label>
+                  <Input 
+                    id="name" 
+                    name="name" 
+                    placeholder="Juan Pérez" 
+                    required 
+                    value={formData.name}
+                    onChange={handleChange}
+                  />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="username">Nombre de Usuario</Label>
+                  <Input 
+                    id="username" 
+                    name="username" 
+                    placeholder="juan123" 
+                    required 
+                    value={formData.username}
+                    onChange={handleChange}
+                  />
+                </div>
+                
                 <div className="grid gap-2">
                   <Label htmlFor="email">Correo Electrónico</Label>
                   <Input 
@@ -123,9 +143,9 @@ export default function LoginPage() {
                     required 
                     value={formData.email}
                     onChange={handleChange}
-                    autoComplete="email"
                   />
                 </div>
+                
                 <div className="grid gap-2">
                   <Label htmlFor="password">Contraseña</Label>
                   <Input 
@@ -135,8 +155,24 @@ export default function LoginPage() {
                     required 
                     value={formData.password}
                     onChange={handleChange}
-                    autoComplete="current-password"
                   />
+                </div>
+                
+                <div className="grid gap-2">
+                  <Label htmlFor="role">Rol</Label>
+                  <Select 
+                    value={formData.role} 
+                    onValueChange={handleRoleChange}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione un rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="student">Estudiante</SelectItem>
+                      <SelectItem value="teacher">Profesor</SelectItem>
+                      <SelectItem value="admin">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 
                 <Button 
@@ -144,29 +180,24 @@ export default function LoginPage() {
                   className="w-full bg-slate-800 hover:bg-slate-700"
                   disabled={loading}
                 >
-                  {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+                  {loading ? 'Registrando...' : 'Registrarse'}
                 </Button>
               </div>
             </form>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center">
-              <Link href="#" className="text-slate-800 hover:underline">
-                ¿Olvidaste tu contraseña?
-              </Link>
-            </div>
-            <div className="text-sm text-center">
-              ¿No tienes una cuenta?{' '}
-              <Link href="/register" className="text-slate-800 hover:underline">
-                Regístrate aquí
+              ¿Ya tienes una cuenta?{' '}
+              <Link href="/" className="text-slate-800 hover:underline">
+                Iniciar Sesión
               </Link>
             </div>
             <div className="text-xs text-center text-muted-foreground">
-              Al iniciar sesión, aceptas nuestros términos y condiciones.
+              Al registrarte, aceptas nuestros términos y condiciones.
             </div>
           </CardFooter>
         </Card>
-
+        
         <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>© 2025 LearnPro Campus Virtual. Todos los derechos reservados.</p>
         </div>

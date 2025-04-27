@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   BookOpen,
@@ -12,6 +13,7 @@ import {
   Settings,
   User,
   GraduationCap,
+  LogOut,
 } from "lucide-react"
 
 const sidebarLinks = [
@@ -54,6 +56,30 @@ const sidebarLinks = [
 
 export function Sidebar({ isMobile }: { isMobile?: boolean }) {
   const pathname = usePathname()
+  const router = useRouter()
+  const [userData, setUserData] = useState<any>(null)
+
+  useEffect(() => {
+    // Obtener los datos del usuario del localStorage
+    const storedUser = localStorage.getItem('user')
+    if (storedUser) {
+      try {
+        const parsed = JSON.parse(storedUser)
+        setUserData(parsed)
+      } catch (error) {
+        console.error('Error al analizar datos del usuario:', error)
+      }
+    }
+  }, [])
+
+  const handleLogout = () => {
+    // Eliminar token y datos de usuario del localStorage
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    
+    // Redirigir a la página de inicio de sesión
+    router.push('/')
+  }
 
   return (
     <div className={cn(
@@ -90,15 +116,22 @@ export function Sidebar({ isMobile }: { isMobile?: boolean }) {
         </nav>
       </div>
       <div className="p-4 border-t">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-3">
           <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center">
             <User className="h-5 w-5 text-slate-500" />
           </div>
           <div>
-            <p className="font-medium text-sm">Estudiante Demo</p>
-            <p className="text-xs text-muted-foreground">demo@alu.lp.cl</p>
+            <p className="font-medium text-sm">{userData?.name || 'Usuario'}</p>
+            <p className="text-xs text-muted-foreground">{userData?.email || 'email@ejemplo.com'}</p>
           </div>
         </div>
+        <button 
+          onClick={handleLogout}
+          className="w-full flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 rounded-lg px-3 py-2 hover:bg-slate-100"
+        >
+          <LogOut className="h-4 w-4" />
+          Cerrar sesión
+        </button>
       </div>
     </div>
   )
