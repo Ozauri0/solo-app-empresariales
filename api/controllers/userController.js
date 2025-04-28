@@ -325,7 +325,13 @@ exports.closeAllSessions = async (req, res) => {
 // Obtener todos los usuarios (sólo admin)
 exports.getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('-password');
+    // Añadir filtro por rol si se especifica en la query
+    const filter = {};
+    if (req.query.role) {
+      filter.role = req.query.role;
+    }
+
+    const users = await User.find(filter).select('-password');
     
     res.status(200).json({
       success: true,

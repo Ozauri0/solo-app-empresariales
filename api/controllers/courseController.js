@@ -43,6 +43,7 @@ exports.getAllCourses = async (req, res) => {
 // Obtener un curso por ID
 exports.getCourseById = async (req, res) => {
   try {
+    // Obtener el curso con información de instructor y estudiantes
     const course = await Course.findById(req.params.id)
       .populate('instructor', 'name email username')
       .populate('students', 'name email username');
@@ -54,12 +55,44 @@ exports.getCourseById = async (req, res) => {
       });
     }
     
-    // Verificar permisos de acceso
-    const isInstructor = course.instructor._id.toString() === req.user.id;
-    const isStudent = course.students.some(student => student._id.toString() === req.user.id);
+    // Verificación mejorada para permisos de acceso
+    const isAdmin = req.user.role === 'admin';
+    const isInstructor = course.instructor && 
+      course.instructor._id && 
+      course.instructor._id.toString() === req.user.id;
     
-    // Solo permitir acceso si es admin, el instructor del curso o un estudiante inscrito
-    if (req.user.role !== 'admin' && !isInstructor && !isStudent) {
+    // Verificación exhaustiva para estudiantes
+    let isStudent = false;
+    const userId = req.user.id;
+    
+    // Método 1: Verificar en el array populado
+    if (course.students && course.students.length > 0) {
+      isStudent = course.students.some(student => 
+        (student._id && student._id.toString() === userId)
+      );
+    }
+    
+    // Método 2: Verificar en el array de IDs no populado (accediendo al documento interno)
+    if (!isStudent && course._doc && course._doc.students && Array.isArray(course._doc.students)) {
+      isStudent = course._doc.students.some(studentId => 
+        studentId.toString() === userId
+      );
+    }
+    
+    // Método 3: Verificar con una búsqueda directa en la base de datos
+    if (!isStudent) {
+      const courseCheck = await Course.findOne({
+        _id: req.params.id,
+        students: userId
+      });
+      isStudent = !!courseCheck;
+    }
+    
+    console.log(`Usuario ${userId} verificando acceso al curso ${req.params.id}`);
+    console.log(`Es admin: ${isAdmin}, Es instructor: ${isInstructor}, Es estudiante: ${isStudent}`);
+    
+    // Denegar acceso si no tiene permisos
+    if (!isAdmin && !isInstructor && !isStudent) {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para ver este curso'
@@ -71,6 +104,7 @@ exports.getCourseById = async (req, res) => {
       course
     });
   } catch (error) {
+    console.error(`Error en getCourseById: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Error al obtener el curso',

@@ -26,20 +26,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Cargar usuario del localStorage al inicio
+  // Cargar usuario del localStorage al inicio con manejo de errores mejorado
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
-    }
-    
-    setLoading(false);
-    
-    // Validar el token con el backend después de cargar desde localStorage
-    if (token) {
-      validateToken();
+    try {
+      const storedUser = localStorage.getItem('user');
+      const token = localStorage.getItem('token');
+      
+      if (storedUser && token) {
+        try {
+          // Intentar parsear el JSON con una validación previa
+          const parsedUser = JSON.parse(storedUser);
+          
+          // Verificar que el objeto tiene la estructura esperada
+          if (parsedUser && typeof parsedUser === 'object' && 
+              'id' in parsedUser && 'name' in parsedUser && 
+              'email' in parsedUser && 'role' in parsedUser) {
+            setUser(parsedUser);
+          } else {
+            // Si la estructura no es la esperada, limpiar localStorage
+            console.warn('Estructura de usuario inválida en localStorage');
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+          }
+        } catch (parseError) {
+          // Si hay un error al parsear, limpiar localStorage
+          console.error('Error al parsear datos de usuario:', parseError);
+          localStorage.removeItem('user');
+          localStorage.removeItem('token');
+        }
+      }
+    } catch (error) {
+      console.error('Error al acceder a localStorage:', error);
+    } finally {
+      setLoading(false);
+      
+      // Validar el token con el backend después de cargar desde localStorage
+      const token = localStorage.getItem('token');
+      if (token) {
+        validateToken();
+      }
     }
   }, []);
 
@@ -111,10 +136,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.message || 'Error al iniciar sesión');
       }
 
+      // Asegurarse de que el objeto usuario tiene la estructura correcta antes de guardarlo
+      const userData = {
+        id: data.user._id || data.user.id,
+        name: data.user.name,
+        email: data.user.email,
+        role: data.user.role
+      };
+
       localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      localStorage.setItem('user', JSON.stringify(userData));
       
-      setUser(data.user);
+      setUser(userData);
       return true;
     } catch (error) {
       console.error('Error al iniciar sesión:', error);

@@ -7,9 +7,54 @@ const fs = require('fs');
 exports.getCourseMaterials = async (req, res) => {
   try {
     const { courseId } = req.params;
+    console.log(`Solicitud para obtener materiales del curso: ${courseId} por usuario: ${req.user.id} (${req.user.role})`);
     
-    // Verificar si existe el curso
+    // PRIMERA VERIFICACIÓN: Si el usuario es administrador, permitir acceso inmediato
+    if (req.user.role === 'admin') {
+      const materials = await CourseMaterial.find({ course: courseId })
+        .populate('uploadedBy', 'name username email')
+        .sort({ uploadedAt: -1 });
+      
+      return res.status(200).json({
+        success: true,
+        count: materials.length,
+        materials
+      });
+    }
+    
+    // VERIFICACIÓN DIRECTA: Comprobar si el usuario es instructor o estudiante del curso
+    try {
+      // Realizar una verificación directa en la base de datos sin populate
+      const courseDirectCheck = await Course.findOne({
+        _id: courseId,
+        $or: [
+          { instructor: req.user.id },
+          { students: req.user.id }
+        ]
+      });
+      
+      // Si encontramos el curso, significa que el usuario es instructor o estudiante
+      if (courseDirectCheck) {
+        console.log(`Verificación directa: Usuario ${req.user.id} tiene acceso al curso ${courseId}`);
+        const materials = await CourseMaterial.find({ course: courseId })
+          .populate('uploadedBy', 'name username email')
+          .sort({ uploadedAt: -1 });
+        
+        return res.status(200).json({
+          success: true,
+          count: materials.length,
+          materials
+        });
+      }
+    } catch (directCheckError) {
+      console.error(`Error en verificación directa: ${directCheckError.message}`);
+      // No retornamos error aquí, continuamos con los otros métodos de verificación
+    }
+    
+    // Si llegamos aquí, el usuario no tiene acceso según la verificación directa
+    // Obtenemos los detalles completos del curso para logs de depuración
     const course = await Course.findById(courseId);
+    
     if (!course) {
       return res.status(404).json({
         success: false,
@@ -17,28 +62,39 @@ exports.getCourseMaterials = async (req, res) => {
       });
     }
     
-    // Verificar si el usuario tiene acceso al curso
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isStudent = course.students.some(student => student.toString() === req.user.id);
+    // Información de depuración detallada
+    console.log(`Detalles del curso: ${courseId}`);
+    console.log(`Instructor: ${course.instructor}`);
+    console.log(`Estudiantes: ${JSON.stringify(course.students)}`);
+    console.log(`Usuario solicitante: ${req.user.id}`);
     
-    if (req.user.role !== 'admin' && !isInstructor && !isStudent) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver estos materiales'
+    // Comprobación final explícita
+    const isInstructor = course.instructor && course.instructor.toString() === req.user.id;
+    const isStudent = Array.isArray(course.students) && 
+                      course.students.map(s => s.toString()).includes(req.user.id);
+    
+    console.log(`Es instructor: ${isInstructor}, Es estudiante: ${isStudent}`);
+    
+    // Decisión final de acceso
+    if (isInstructor || isStudent) {
+      const materials = await CourseMaterial.find({ course: courseId })
+        .populate('uploadedBy', 'name username email')
+        .sort({ uploadedAt: -1 });
+      
+      return res.status(200).json({
+        success: true,
+        count: materials.length,
+        materials
       });
     }
     
-    // Obtener materiales
-    const materials = await CourseMaterial.find({ course: courseId })
-      .populate('uploadedBy', 'name username email')
-      .sort({ uploadedAt: -1 });
-    
-    res.status(200).json({
-      success: true,
-      count: materials.length,
-      materials
+    // Si ninguna verificación tiene éxito, denegar acceso
+    return res.status(403).json({
+      success: false,
+      message: 'No tienes permiso para ver estos materiales'
     });
   } catch (error) {
+    console.error(`Error en getCourseMaterials: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Error al obtener materiales del curso',
@@ -51,6 +107,7 @@ exports.getCourseMaterials = async (req, res) => {
 exports.getCourseMaterial = async (req, res) => {
   try {
     const { courseId, materialId } = req.params;
+    console.log(`Solicitud para obtener material: ${materialId} del curso: ${courseId} por usuario: ${req.user.id} (${req.user.role})`);
     
     // Buscar el material
     const material = await CourseMaterial.findOne({
@@ -65,23 +122,39 @@ exports.getCourseMaterial = async (req, res) => {
       });
     }
     
-    // Verificar si el usuario tiene acceso al curso
-    const course = await Course.findById(courseId);
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isStudent = course.students.some(student => student.toString() === req.user.id);
-    
-    if (req.user.role !== 'admin' && !isInstructor && !isStudent) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver este material'
+    // Si es admin, permitir acceso
+    if (req.user.role === 'admin') {
+      return res.status(200).json({
+        success: true,
+        material
       });
     }
     
-    res.status(200).json({
-      success: true,
-      material
+    // Verificación directa en la base de datos
+    const courseCheck = await Course.findOne({
+      _id: courseId,
+      $or: [
+        { instructor: req.user.id },
+        { students: req.user.id }
+      ]
     });
+    
+    if (courseCheck) {
+      console.log(`Usuario ${req.user.id} tiene acceso al material ${materialId}`);
+      return res.status(200).json({
+        success: true,
+        material
+      });
+    }
+    
+    // Si no tiene acceso, denegar
+    return res.status(403).json({
+      success: false,
+      message: 'No tienes permiso para ver este material'
+    });
+    
   } catch (error) {
+    console.error(`Error en getCourseMaterial: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Error al obtener el material',
