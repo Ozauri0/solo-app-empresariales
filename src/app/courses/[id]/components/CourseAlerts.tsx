@@ -4,8 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface NotificationProps {
   _id: string;
@@ -32,15 +34,66 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCourseInstructor, setIsCourseInstructor] = useState(false);
+  
+  // Estados para el modal de edición
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingNotification, setEditingNotification] = useState<NotificationProps | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editMessage, setEditMessage] = useState('');
 
-  // Verificar si el usuario es administrador o instructor
-  const canCreateAlert = user?.role === 'admin' || user?.role === 'instructor';
+  // Verificar si el usuario es administrador general
+  const isAdmin = user?.role === 'admin';
+  
+  // Ahora verificamos los permisos combinando el rol y la relación con el curso específico
+  const canCreateAlert = isAdmin || isCourseInstructor;
+  const canManageNotifications = isAdmin || isCourseInstructor;
+
+  // Verificar si el usuario es instructor del curso específico
+  const checkIfCourseInstructor = async () => {
+    if (!courseId || !token || !user) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener información del curso');
+      }
+
+      const courseData = await response.json();
+      console.log('[CourseAlerts] Datos del curso:', courseData);
+      
+      // Corregir la navegación del objeto para acceder al instructor correctamente
+      // La API devuelve {success: true, course: {...}} 
+      const course = courseData.course || courseData;
+      
+      // Extraer los IDs para comparar
+      const userId = user.id;
+      // Dependiendo de la estructura, el instructor podría ser un objeto o directamente el ID
+      const instructorId = course.instructor?._id || course.instructor;
+      
+      // Verificar si el usuario es el instructor de este curso específico
+      const isInstructor = instructorId && userId && instructorId.toString() === userId.toString();
+      
+      console.log('[CourseAlerts] Estructura del curso:', course);
+      console.log('[CourseAlerts] ID del instructor:', instructorId);
+      console.log('[CourseAlerts] ID del usuario:', userId);
+      console.log('[CourseAlerts] ¿Es instructor del curso?', isInstructor);
+      
+      setIsCourseInstructor(!!isInstructor); // Convertir a booleano para manejar undefined
+    } catch (err: any) {
+      console.error('[CourseAlerts] Error al verificar instructor:', err.message);
+    }
+  };
 
   // Cargar notificaciones
   const fetchNotifications = async () => {
     // No retornamos si isLoading es true en la primera carga
-    console.log(`[CourseAlerts] Solicitando notificaciones para el curso: ${courseId}`);
-    
+    console.log(`[CourseAlerts] Solicitando notificaciones para el curso: ${courseId}`);    
     setIsLoading(true);
     
     try {
@@ -73,6 +126,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
     
     if (courseId && token && isMounted.current) {
       console.log(`[CourseAlerts] useEffect ejecutado para el curso: ${courseId}`);
+      checkIfCourseInstructor();
       fetchNotifications();
     }
     
@@ -142,6 +196,89 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
       setError(err.message);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  // Eliminar notificación
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      // Confirmar antes de eliminar
+      if (!confirm('¿Estás seguro de que deseas eliminar esta alerta?')) {
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la alerta');
+      }
+
+      // Actualizar el estado local
+      setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
+      
+      toast.success('Éxito', {
+        description: 'Alerta eliminada correctamente.'
+      });
+    } catch (err: any) {
+      console.error(err.message);
+      toast.error('Error', {
+        description: 'No se pudo eliminar la alerta.'
+      });
+    }
+  };
+
+  // Abrir modal de edición
+  const openEditDialog = (notification: NotificationProps) => {
+    setEditingNotification(notification);
+    setEditTitle(notification.title);
+    setEditMessage(notification.message);
+    setEditDialogOpen(true);
+  };
+
+  // Guardar cambios de la notificación
+  const saveNotificationChanges = async () => {
+    if (!editingNotification) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/notifications/${editingNotification._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          message: editMessage
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar la alerta');
+      }
+
+      const updatedNotification = await response.json();
+
+      // Actualizar el estado local
+      setNotifications(prev => prev.map(notif => 
+        notif._id === editingNotification._id 
+          ? { ...notif, title: updatedNotification.title, message: updatedNotification.message } 
+          : notif
+      ));
+      
+      setEditDialogOpen(false);
+      toast.success('Éxito', {
+        description: 'Alerta actualizada correctamente.'
+      });
+    } catch (err: any) {
+      console.error(err.message);
+      toast.error('Error', {
+        description: 'No se pudo actualizar la alerta.'
+      });
     }
   };
 
@@ -228,11 +365,35 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
                   <CardTitle className="text-xl">{notification.title}</CardTitle>
-                  {!notification.isRead && (
-                    <Badge variant="default" className="ml-2">
-                      Nueva
-                    </Badge>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {!notification.isRead && (
+                      <Badge variant="default" className="ml-2">
+                        Nueva
+                      </Badge>
+                    )}
+                    {canManageNotifications && (
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => openEditDialog(notification)}
+                          className="p-1 h-auto"
+                        >
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Editar</span>
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => deleteNotification(notification._id)}
+                          className="p-1 h-auto text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          <span className="sr-only">Eliminar</span>
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <CardDescription>
                   Por: {notification.sender.name} • {new Date(notification.createdAt).toLocaleString()}
@@ -254,6 +415,40 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
               </CardFooter>
             </Card>
           ))}
+
+          {/* Modal de edición de alerta */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Editar Alerta</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <label htmlFor="edit-title" className="text-sm font-medium">Título</label>
+                  <Input
+                    id="edit-title"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="edit-message" className="text-sm font-medium">Mensaje</label>
+                  <Textarea
+                    id="edit-message"
+                    rows={5}
+                    value={editMessage}
+                    onChange={(e) => setEditMessage(e.target.value)}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancelar</Button>
+                </DialogClose>
+                <Button onClick={saveNotificationChanges}>Guardar cambios</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
     </div>

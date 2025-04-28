@@ -35,8 +35,9 @@ export function Header() {
             <Search className="h-5 w-5" />
             <span className="sr-only">Buscar</span>
           </Button>
-          <Link href="/notifications"></Link>
+          
           <Button variant="ghost" size="icon">
+          <Link href="/notifications"></Link>
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notificaciones</span>
           </Button>

@@ -195,9 +195,102 @@ const markNotificationAsRead = asyncHandler(async (req, res) => {
   res.json({ success: true });
 });
 
+// @desc    Eliminar una notificación
+// @route   DELETE /api/notifications/:id
+// @access  Private (Admin, Instructor del curso)
+const deleteNotification = asyncHandler(async (req, res) => {
+  const notification = await Notification.findById(req.params.id);
+  
+  if (!notification) {
+    res.status(404);
+    throw new Error('Notificación no encontrada');
+  }
+
+  // Obtener el ID del usuario
+  const userId = req.user._id || req.user.id;
+
+  // Verificar que el usuario es admin o el instructor del curso
+  const isAdmin = req.user.role === 'admin';
+  
+  // Obtener el curso asociado a la notificación
+  const course = await Course.findById(notification.courseId);
+  if (!course) {
+    res.status(404);
+    throw new Error('Curso asociado no encontrado');
+  }
+  
+  const isInstructor = course.instructor && 
+                      course.instructor.toString() === userId.toString();
+  
+  // Solo permitir eliminar si es admin o el instructor del curso
+  if (!isAdmin && !isInstructor) {
+    res.status(403);
+    throw new Error('No tienes permisos para eliminar esta notificación');
+  }
+
+  await notification.deleteOne();
+  
+  res.json({ success: true, message: 'Notificación eliminada correctamente' });
+});
+
+// @desc    Editar una notificación
+// @route   PUT /api/notifications/:id
+// @access  Private (Admin, Instructor del curso)
+const updateNotification = asyncHandler(async (req, res) => {
+  const { title, message, isAlert } = req.body;
+  
+  // Verificar que los campos requeridos estén presentes
+  if (!title || !message) {
+    res.status(400);
+    throw new Error('Por favor proporciona título y mensaje');
+  }
+  
+  const notification = await Notification.findById(req.params.id);
+  
+  if (!notification) {
+    res.status(404);
+    throw new Error('Notificación no encontrada');
+  }
+
+  // Obtener el ID del usuario
+  const userId = req.user._id || req.user.id;
+
+  // Verificar que el usuario es admin o el instructor del curso
+  const isAdmin = req.user.role === 'admin';
+  
+  // Obtener el curso asociado a la notificación
+  const course = await Course.findById(notification.courseId);
+  if (!course) {
+    res.status(404);
+    throw new Error('Curso asociado no encontrado');
+  }
+  
+  const isInstructor = course.instructor && 
+                      course.instructor.toString() === userId.toString();
+  
+  // Solo permitir editar si es admin o el instructor del curso
+  if (!isAdmin && !isInstructor) {
+    res.status(403);
+    throw new Error('No tienes permisos para editar esta notificación');
+  }
+
+  // Actualizar la notificación
+  notification.title = title;
+  notification.message = message;
+  if (isAlert !== undefined) {
+    notification.isAlert = isAlert;
+  }
+  
+  const updatedNotification = await notification.save();
+  
+  res.json(updatedNotification);
+});
+
 module.exports = {
   createNotification,
   getNotificationsByCourse,
   getUserNotifications,
-  markNotificationAsRead
+  markNotificationAsRead,
+  deleteNotification,
+  updateNotification
 };

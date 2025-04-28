@@ -8,6 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Pencil, Trash2 } from 'lucide-react';
 
 interface Notification {
   _id: string;
@@ -31,6 +43,15 @@ export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Estado para el modal de edición
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editMessage, setEditMessage] = useState('');
+
+  // Verificar si el usuario es admin o instructor
+  const canManageNotifications = user && (user.role === 'admin' || user.role === 'instructor');
 
   // Cargar todas las notificaciones del usuario
   const fetchNotifications = async () => {
@@ -92,6 +113,89 @@ export default function NotificationsPage() {
     }
   };
 
+  // Eliminar notificación
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      // Confirmar antes de eliminar
+      if (!confirm('¿Estás seguro de que deseas eliminar esta notificación?')) {
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al eliminar la notificación');
+      }
+
+      // Actualizar el estado local
+      setNotifications(prev => prev.filter(notif => notif._id !== notificationId));
+      
+      toast.success('Éxito', {
+        description: 'Notificación eliminada correctamente.'
+      });
+    } catch (err: any) {
+      console.error(err.message);
+      toast.error('Error', {
+        description: 'No se pudo eliminar la notificación.'
+      });
+    }
+  };
+
+  // Abrir modal de edición
+  const openEditDialog = (notification: Notification) => {
+    setEditingNotification(notification);
+    setEditTitle(notification.title);
+    setEditMessage(notification.message);
+    setEditDialogOpen(true);
+  };
+
+  // Guardar cambios de la notificación
+  const saveNotificationChanges = async () => {
+    if (!editingNotification) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/notifications/${editingNotification._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          message: editMessage
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar la notificación');
+      }
+
+      const updatedNotification = await response.json();
+
+      // Actualizar el estado local
+      setNotifications(prev => prev.map(notif => 
+        notif._id === editingNotification._id 
+          ? { ...notif, title: updatedNotification.title, message: updatedNotification.message } 
+          : notif
+      ));
+      
+      setEditDialogOpen(false);
+      toast.success('Éxito', {
+        description: 'Notificación actualizada correctamente.'
+      });
+    } catch (err: any) {
+      console.error(err.message);
+      toast.error('Error', {
+        description: 'No se pudo actualizar la notificación.'
+      });
+    }
+  };
+
   // Ir al curso desde la notificación
   const goToCourse = (courseId: string) => {
     router.push(`/courses/${courseId}`);
@@ -114,6 +218,73 @@ export default function NotificationsPage() {
     );
   }
 
+  // Renderizar la tarjeta de notificación con opciones de edición y eliminación para admin/instructor
+  const renderNotificationCard = (notification: Notification, isUnread: boolean) => (
+    <Card key={notification._id} className={isUnread ? "bg-blue-50" : "bg-white"}>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="flex items-center gap-2">
+            {notification.title}
+            {isUnread && (
+              <Badge variant="default" className="ml-2">
+                Nueva
+              </Badge>
+            )}
+          </CardTitle>
+          
+          {canManageNotifications && (
+            <div className="flex space-x-2">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => openEditDialog(notification)}
+                className="p-1 h-auto"
+              >
+                <Pencil className="h-4 w-4" />
+                <span className="sr-only">Editar</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => deleteNotification(notification._id)}
+                className="p-1 h-auto text-red-500 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="sr-only">Eliminar</span>
+              </Button>
+            </div>
+          )}
+        </div>
+        <CardDescription className="text-sm">
+          {notification.courseId?.name && (
+            <span 
+              className="font-semibold cursor-pointer hover:underline" 
+              onClick={() => goToCourse(notification.courseId._id)}
+            >
+              {notification.courseId.name}
+            </span>
+          )}
+          {" • "}
+          Por: {notification.sender.name} • {new Date(notification.createdAt).toLocaleString()}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <p className="whitespace-pre-wrap">{notification.message}</p>
+      </CardContent>
+      {isUnread && (
+        <CardFooter className="flex justify-end">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => markAsRead(notification._id)}
+          >
+            Marcar como leída
+          </Button>
+        </CardFooter>
+      )}
+    </Card>
+  );
+
   return (
     <ProtectedRoute>
       <div className="space-y-6">
@@ -133,44 +304,7 @@ export default function NotificationsPage() {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">No leídas</h2>
                 <div className="space-y-3">
-                  {unreadNotifications.map((notification) => (
-                    <Card key={notification._id} className="bg-blue-50">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="flex items-center gap-2">
-                            {notification.title}
-                            <Badge variant="default" className="ml-2">
-                              Nueva
-                            </Badge>
-                          </CardTitle>
-                        </div>
-                        <CardDescription className="text-sm">
-                          {notification.courseId?.name && (
-                            <span 
-                              className="font-semibold cursor-pointer hover:underline" 
-                              onClick={() => goToCourse(notification.courseId._id)}
-                            >
-                              {notification.courseId.name}
-                            </span>
-                          )}
-                          {" • "}
-                          Por: {notification.sender.name} • {new Date(notification.createdAt).toLocaleString()}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="whitespace-pre-wrap">{notification.message}</p>
-                      </CardContent>
-                      <CardFooter className="flex justify-end">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => markAsRead(notification._id)}
-                        >
-                          Marcar como leída
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
+                  {unreadNotifications.map((notification) => renderNotificationCard(notification, true))}
                 </div>
               </div>
             )}
@@ -180,37 +314,46 @@ export default function NotificationsPage() {
               <div className="space-y-4">
                 <h2 className="text-xl font-semibold">Leídas</h2>
                 <div className="space-y-3">
-                  {readNotifications.map((notification) => (
-                    <Card key={notification._id} className="bg-white">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="flex items-center gap-2">
-                            {notification.title}
-                          </CardTitle>
-                        </div>
-                        <CardDescription className="text-sm">
-                          {notification.courseId?.name && (
-                            <span 
-                              className="font-semibold cursor-pointer hover:underline" 
-                              onClick={() => goToCourse(notification.courseId._id)}
-                            >
-                              {notification.courseId.name}
-                            </span>
-                          )}
-                          {" • "}
-                          Por: {notification.sender.name} • {new Date(notification.createdAt).toLocaleString()}
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="whitespace-pre-wrap">{notification.message}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  {readNotifications.map((notification) => renderNotificationCard(notification, false))}
                 </div>
               </div>
             )}
           </div>
         )}
+
+        {/* Modal de edición de notificación */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Editar Notificación</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="title">Título</Label>
+                <Input
+                  id="title"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="message">Mensaje</Label>
+                <Textarea
+                  id="message"
+                  rows={5}
+                  value={editMessage}
+                  onChange={(e) => setEditMessage(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button onClick={saveNotificationChanges}>Guardar cambios</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );
