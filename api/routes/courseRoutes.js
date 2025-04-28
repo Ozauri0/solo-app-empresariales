@@ -11,9 +11,9 @@ const {
 } = require('../controllers/courseController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
-// Rutas públicas
-router.get('/', getAllCourses);
-router.get('/:id', getCourseById);
+// Rutas protegidas
+router.get('/', protect, getAllCourses);
+router.get('/:id', protect, getCourseById);
 
 // Rutas para profesores y administradores
 router.post('/', protect, authorize('teacher', 'admin'), createCourse);

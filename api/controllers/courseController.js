@@ -1,12 +1,30 @@
 const Course = require('../models/Course');
 const User = require('../models/User');
 
-// Obtener todos los cursos
+// Obtener todos los cursos (filtrados según el rol del usuario)
 exports.getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find()
-      .populate('instructor', 'name email username')
-      .sort({ createdAt: -1 });
+    let courses;
+    
+    // Filtrar según el rol del usuario
+    if (req.user.role === 'student') {
+      // Estudiantes: ver solo cursos en los que están inscritos
+      courses = await Course.find({ students: req.user.id })
+        .populate('instructor', 'name email username')
+        .sort({ createdAt: -1 });
+    } 
+    else if (req.user.role === 'teacher') {
+      // Profesores: ver solo cursos que imparten
+      courses = await Course.find({ instructor: req.user.id })
+        .populate('instructor', 'name email username')
+        .sort({ createdAt: -1 });
+    }
+    else if (req.user.role === 'admin') {
+      // Administradores: ver todos los cursos
+      courses = await Course.find()
+        .populate('instructor', 'name email username')
+        .sort({ createdAt: -1 });
+    }
     
     res.status(200).json({
       success: true,
@@ -33,6 +51,18 @@ exports.getCourseById = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Curso no encontrado'
+      });
+    }
+    
+    // Verificar permisos de acceso
+    const isInstructor = course.instructor._id.toString() === req.user.id;
+    const isStudent = course.students.some(student => student._id.toString() === req.user.id);
+    
+    // Solo permitir acceso si es admin, el instructor del curso o un estudiante inscrito
+    if (req.user.role !== 'admin' && !isInstructor && !isStudent) {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para ver este curso'
       });
     }
     
