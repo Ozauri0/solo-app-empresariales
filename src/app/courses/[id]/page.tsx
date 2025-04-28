@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, FileText, Users } from "lucide-react"
+import { Bell, Calendar, FileText, Users } from "lucide-react"
 import CourseMaterials from "./components/CourseMaterials"
 import CourseStudents from "./components/CourseStudents"
+import CourseAlerts from "./components/CourseAlerts"
 
 interface User {
   _id: string
@@ -283,11 +284,17 @@ export default function CourseDetailsPage() {
           </Card>
         </div>
 
-        {/* Pestañas: Estudiantes y Materiales */}
+        {/* Pestañas: Materiales, Estudiantes y Alertas */}
         <Tabs defaultValue="materials" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="materials">Materiales</TabsTrigger>
             <TabsTrigger value="students">Estudiantes</TabsTrigger>
+            <TabsTrigger value="alerts">
+              <span className="flex items-center gap-1">
+                <Bell className="w-4 h-4" />
+                Alertas
+              </span>
+            </TabsTrigger>
           </TabsList>
 
           {/* Pestaña de Materiales */}
@@ -308,6 +315,11 @@ export default function CourseDetailsPage() {
               userRole={userRole} 
               fetchCourse={async () => { await fetchCourse(); }} 
             />
+          </TabsContent>
+          
+          {/* Pestaña de Alertas */}
+          <TabsContent value="alerts" className="space-y-4">
+            <CourseAlerts courseId={id as string} />
           </TabsContent>
         </Tabs>
       </div>

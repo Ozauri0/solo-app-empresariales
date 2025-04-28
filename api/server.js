@@ -26,6 +26,7 @@ const gradeRoutes = require('./routes/gradeRoutes');
 const messageRoutes = require('./routes/messageRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
 const courseMaterialRoutes = require('./routes/courseMaterialRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
 
 // Usar rutas
 app.use('/api/users', userRoutes);
@@ -35,6 +36,7 @@ app.use('/api/grades', gradeRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api', courseMaterialRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Manejar errores de multer
 app.use((err, req, res, next) => {

@@ -13,6 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  token: string | null;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   validateToken: () => Promise<boolean>;
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [token, setToken] = useState<string | null>(null);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -30,9 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       const storedUser = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
+      const storedToken = localStorage.getItem('token');
       
-      if (storedUser && token) {
+      if (storedUser && storedToken) {
         try {
           // Intentar parsear el JSON con una validación previa
           const parsedUser = JSON.parse(storedUser);
@@ -42,17 +44,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               'id' in parsedUser && 'name' in parsedUser && 
               'email' in parsedUser && 'role' in parsedUser) {
             setUser(parsedUser);
+            setToken(storedToken);
           } else {
             // Si la estructura no es la esperada, limpiar localStorage
             console.warn('Estructura de usuario inválida en localStorage');
             localStorage.removeItem('user');
             localStorage.removeItem('token');
+            setToken(null);
           }
         } catch (parseError) {
           // Si hay un error al parsear, limpiar localStorage
           console.error('Error al parsear datos de usuario:', parseError);
           localStorage.removeItem('user');
           localStorage.removeItem('token');
+          setToken(null);
         }
       }
     } catch (error) {
@@ -61,8 +66,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       
       // Validar el token con el backend después de cargar desde localStorage
-      const token = localStorage.getItem('token');
-      if (token) {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
         validateToken();
       }
     }
@@ -148,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('user', JSON.stringify(userData));
       
       setUser(userData);
+      setToken(data.token);
       return true;
     } catch (error) {
       console.error('Error al iniciar sesión:', error);
@@ -159,6 +165,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    setToken(null);
   };
 
   const logout = () => {
@@ -167,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, validateToken }}>
+    <AuthContext.Provider value={{ user, loading, token, login, logout, validateToken }}>
       {children}
     </AuthContext.Provider>
   );
