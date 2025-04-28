@@ -340,3 +340,130 @@ exports.getAllUsers = async (req, res) => {
     });
   }
 };
+
+// Obtener un usuario específico por ID (sólo admin)
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener el usuario',
+      error: error.message
+    });
+  }
+};
+
+// Actualizar un usuario específico por ID (sólo admin)
+exports.updateUser = async (req, res) => {
+  try {
+    const { 
+      name,
+      email, 
+      username, 
+      role,
+      phone,
+      address,
+      rut,
+      studentId,
+      program,
+      yearOfAdmission
+    } = req.body;
+    
+    // Verificar si el correo o nombre de usuario ya está en uso
+    if (email || username) {
+      const existingUser = await User.findOne({
+        $and: [
+          { _id: { $ne: req.params.id } },
+          { $or: [
+            { email: email },
+            { username: username }
+          ]}
+        ]
+      });
+
+      if (existingUser) {
+        return res.status(400).json({
+          success: false,
+          message: 'El correo electrónico o nombre de usuario ya está en uso'
+        });
+      }
+    }
+    
+    // Actualizar usuario
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { 
+        $set: { 
+          name: name || undefined,
+          email: email || undefined,
+          username: username || undefined,
+          role: role || undefined,
+          phone: phone || undefined,
+          address: address || undefined,
+          rut: rut || undefined,
+          studentId: studentId || undefined,
+          program: program || undefined,
+          yearOfAdmission: yearOfAdmission || undefined
+        } 
+      },
+      { new: true, runValidators: true }
+    ).select('-password');
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Usuario actualizado exitosamente',
+      user: updatedUser
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar el usuario',
+      error: error.message
+    });
+  }
+};
+
+// Eliminar un usuario específico por ID (sólo admin)
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      message: 'Usuario eliminado exitosamente'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al eliminar el usuario',
+      error: error.message
+    });
+  }
+};

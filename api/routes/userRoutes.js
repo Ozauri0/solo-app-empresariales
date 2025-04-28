@@ -6,6 +6,9 @@ const {
   getProfile, 
   updateProfile, 
   getAllUsers,
+  getUserById,
+  updateUser,
+  deleteUser,
   changePassword,
   closeSession,
   closeAllSessions
@@ -25,5 +28,8 @@ router.post('/session/close-all', protect, closeAllSessions);
 
 // Rutas de administrador
 router.get('/', protect, authorize('admin'), getAllUsers);
+router.get('/:id', protect, authorize('admin'), getUserById);
+router.put('/:id', protect, authorize('admin'), updateUser);
+router.delete('/:id', protect, authorize('admin'), deleteUser);
 
 module.exports = router;
