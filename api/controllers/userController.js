@@ -4,7 +4,19 @@ const jwt = require('jsonwebtoken');
 // Registrar un nuevo usuario
 exports.register = async (req, res) => {
   try {
-    const { username, email, password, name, role } = req.body;
+    const { 
+      username, 
+      email, 
+      password, 
+      name, 
+      role, 
+      rut,
+      phone,
+      address,
+      studentId,
+      program,
+      yearOfAdmission
+    } = req.body;
 
     // Verificar si el usuario ya existe
     const existingUser = await User.findOne({ $or: [{ email }, { username }] });
@@ -21,7 +33,13 @@ exports.register = async (req, res) => {
       email,
       password,
       name,
-      role
+      role,
+      rut,
+      phone,
+      address,
+      studentId,
+      program,
+      yearOfAdmission: yearOfAdmission || new Date().getFullYear()
     });
 
     await user.save();
@@ -77,6 +95,20 @@ exports.login = async (req, res) => {
       });
     }
 
+    // Actualizar sesión activa
+    const userAgent = req.headers['user-agent'] || 'Dispositivo desconocido';
+    const newSession = {
+      deviceType: detectDeviceType(userAgent),
+      deviceName: userAgent,
+      location: 'Temuco', // En producción, usar geolocalización
+      lastActive: new Date()
+    };
+
+    // Agregar la sesión al usuario
+    await User.findByIdAndUpdate(user._id, {
+      $push: { activeSessions: newSession }
+    });
+
     // Generar token JWT
     const token = jwt.sign(
       { id: user._id, role: user.role }, 
@@ -104,6 +136,13 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// Función para detectar el tipo de dispositivo
+function detectDeviceType(userAgent) {
+  if (/mobile/i.test(userAgent)) return 'Móvil';
+  if (/tablet/i.test(userAgent)) return 'Tablet';
+  return 'Computadora';
+}
 
 // Obtener perfil de usuario
 exports.getProfile = async (req, res) => {
@@ -133,7 +172,15 @@ exports.getProfile = async (req, res) => {
 // Actualizar perfil de usuario
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, email, username, profileImage } = req.body;
+    const { 
+      name,
+      email, 
+      username, 
+      profileImage,
+      phone,
+      address,
+      rut
+    } = req.body;
     
     // Verificar si el correo o nombre de usuario ya está en uso
     if (email || username) {
@@ -163,7 +210,10 @@ exports.updateProfile = async (req, res) => {
           name: name || undefined,
           email: email || undefined,
           username: username || undefined,
-          profileImage: profileImage || undefined
+          profileImage: profileImage || undefined,
+          phone: phone || undefined,
+          address: address || undefined,
+          rut: rut || undefined
         } 
       },
       { new: true, runValidators: true }
@@ -185,6 +235,88 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Error al actualizar el perfil',
+      error: error.message
+    });
+  }
+};
+
+// Cambiar contraseña
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    // Obtener usuario
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado'
+      });
+    }
+    
+    // Verificar contraseña actual
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'La contraseña actual es incorrecta'
+      });
+    }
+    
+    // Actualizar contraseña
+    user.password = newPassword;
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      message: 'Contraseña actualizada exitosamente'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al cambiar la contraseña',
+      error: error.message
+    });
+  }
+};
+
+// Cerrar sesión específica
+exports.closeSession = async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    
+    await User.findByIdAndUpdate(req.user.id, {
+      $pull: { activeSessions: { _id: sessionId } }
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Sesión cerrada exitosamente'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al cerrar la sesión',
+      error: error.message
+    });
+  }
+};
+
+// Cerrar todas las sesiones
+exports.closeAllSessions = async (req, res) => {
+  try {
+    await User.findByIdAndUpdate(req.user.id, {
+      $set: { activeSessions: [] }
+    });
+    
+    res.status(200).json({
+      success: true,
+      message: 'Todas las sesiones han sido cerradas exitosamente'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al cerrar las sesiones',
       error: error.message
     });
   }

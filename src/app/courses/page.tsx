@@ -1,5 +1,6 @@
 "use client"
 
+import ProtectedRoute from "@/components/protected-route";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CourseCard } from "@/components/ui/course-card"
 import { Input } from "@/components/ui/input"
@@ -53,55 +54,57 @@ export default function CoursesPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Mis Cursos</h1>
+    <ProtectedRoute>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-bold">Mis Cursos</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtrar Cursos</CardTitle>
-          <CardDescription>Busca y filtra tus cursos</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="search">Buscar</Label>
-              <Input id="search" placeholder="Nombre del curso o código" />
+        <Card>
+          <CardHeader>
+            <CardTitle>Filtrar Cursos</CardTitle>
+            <CardDescription>Busca y filtra tus cursos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="space-y-2">
+                <Label htmlFor="search">Buscar</Label>
+                <Input id="search" placeholder="Nombre del curso o código" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="semester">Semestre</Label>
+                <Select defaultValue="current">
+                  <SelectTrigger id="semester">
+                    <SelectValue placeholder="Seleccionar semestre" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="current">Semestre Actual</SelectItem>
+                    <SelectItem value="previous">Semestre Anterior</SelectItem>
+                    <SelectItem value="all">Todos los Semestres</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">Estado</Label>
+                <Select defaultValue="active">
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Seleccionar estado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Activos</SelectItem>
+                    <SelectItem value="completed">Completados</SelectItem>
+                    <SelectItem value="all">Todos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="semester">Semestre</Label>
-              <Select defaultValue="current">
-                <SelectTrigger id="semester">
-                  <SelectValue placeholder="Seleccionar semestre" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="current">Semestre Actual</SelectItem>
-                  <SelectItem value="previous">Semestre Anterior</SelectItem>
-                  <SelectItem value="all">Todos los Semestres</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Estado</Label>
-              <Select defaultValue="active">
-                <SelectTrigger id="status">
-                  <SelectValue placeholder="Seleccionar estado" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Activos</SelectItem>
-                  <SelectItem value="completed">Completados</SelectItem>
-                  <SelectItem value="all">Todos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {courses.map((course) => (
-          <CourseCard key={course.id} course={course} />
-        ))}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {courses.map((course) => (
+            <CourseCard key={course.id} course={course} />
+          ))}
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   )
 }

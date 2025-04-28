@@ -28,6 +28,49 @@ const userSchema = new mongoose.Schema({
   profileImage: {
     type: String
   },
+  rut: {
+    type: String
+  },
+  phone: {
+    type: String
+  },
+  address: {
+    type: String
+  },
+  // Información académica
+  studentId: {
+    type: String
+  },
+  program: {
+    type: String,
+    default: 'Ingeniería Civil Informatica'
+  },
+  yearOfAdmission: {
+    type: Number,
+    default: new Date().getFullYear()
+  },
+  status: {
+    type: String,
+    default: 'Activo'
+  },
+  gpa: {
+    type: String,
+    default: '0.0'
+  },
+  advisor: {
+    type: String,
+    default: 'N/A'
+  },
+  // Sesiones activas
+  activeSessions: [{
+    deviceType: String,
+    deviceName: String,
+    location: String,
+    lastActive: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

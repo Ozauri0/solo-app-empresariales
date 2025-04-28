@@ -1,9 +1,9 @@
-import Link from "next/link"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Mail, Clock, User, Star, Archive } from "lucide-react"
+'use client'
+
+import ProtectedRoute from "@/components/protected-route";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 export default function MessagesPage() {
   const receivedMessages = [
@@ -77,146 +77,124 @@ export default function MessagesPage() {
   ]
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Mis Mensajes</h1>
-        <Button>
-          <Mail className="mr-2 h-4 w-4" />
-          Nuevo Mensaje
-        </Button>
+    <ProtectedRoute>
+      <div className="container px-4 py-8 mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Mensajes</h1>
+          <Button>Nuevo Mensaje</Button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Conversaciones</CardTitle>
+                <CardDescription>Mensajes recientes</CardDescription>
+                <div className="mt-2">
+                  <Input type="text" placeholder="Buscar mensajes..." />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {/* Conversaciones aquí */}
+                  <div className="flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-gray-100 border-l-4 border-slate-800">
+                    <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+                      <span className="text-white font-medium">JD</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">Juan Docente</p>
+                      <p className="text-sm text-gray-500 truncate">Respecto a la tarea de la semana...</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="text-xs text-gray-500">12:30 PM</p>
+                      <span className="inline-flex items-center justify-center w-6 h-6 text-xs font-bold text-white bg-red-500 rounded-full">2</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center">
+                      <span className="text-slate-700 font-medium">MC</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">María Coordinadora</p>
+                      <p className="text-sm text-gray-500 truncate">Información sobre el próximo examen</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="text-xs text-gray-500">Ayer</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-4 p-3 rounded-lg cursor-pointer hover:bg-gray-100">
+                    <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center">
+                      <span className="text-slate-700 font-medium">AP</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">Alberto Profesor</p>
+                      <p className="text-sm text-gray-500 truncate">Material complementario para el curso</p>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <p className="text-xs text-gray-500">Lun</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          <div className="md:col-span-2">
+            <Card className="h-full flex flex-col">
+              <CardHeader className="flex-shrink-0 border-b">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
+                    <span className="text-white font-medium">JD</span>
+                  </div>
+                  <div>
+                    <CardTitle>Juan Docente</CardTitle>
+                    <CardDescription>Profesor - Programación Avanzada</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="flex-grow overflow-y-auto p-4">
+                <div className="space-y-4">
+                  <div className="flex flex-col space-y-2">
+                    <div className="bg-gray-100 p-3 rounded-lg max-w-[80%] self-start">
+                      <p className="text-sm">Hola, quería consultarte sobre la tarea que asigné la semana pasada. ¿Has tenido la oportunidad de revisarla?</p>
+                      <p className="text-xs text-gray-500 mt-1">10:15 AM</p>
+                    </div>
+                    <div className="bg-gray-100 p-3 rounded-lg max-w-[80%] self-start">
+                      <p className="text-sm">También quería recordarte que el plazo de entrega es este viernes.</p>
+                      <p className="text-xs text-gray-500 mt-1">10:16 AM</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2 items-end">
+                    <div className="bg-slate-800 text-white p-3 rounded-lg max-w-[80%]">
+                      <p className="text-sm">Sí, profesor. Ya he comenzado a trabajar en ella.</p>
+                      <p className="text-xs text-gray-300 mt-1">10:45 AM</p>
+                    </div>
+                    <div className="bg-slate-800 text-white p-3 rounded-lg max-w-[80%]">
+                      <p className="text-sm">Tengo algunas dudas sobre el tercer ejercicio. ¿Podríamos discutirlo?</p>
+                      <p className="text-xs text-gray-300 mt-1">10:46 AM</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col space-y-2">
+                    <div className="bg-gray-100 p-3 rounded-lg max-w-[80%] self-start">
+                      <p className="text-sm">Claro, con gusto. ¿Qué parte del ejercicio te está causando problemas?</p>
+                      <p className="text-xs text-gray-500 mt-1">12:30 PM</p>
+                    </div>
+                    <div className="bg-gray-100 p-3 rounded-lg max-w-[80%] self-start">
+                      <p className="text-sm">Si prefieres, podemos reunirnos en mi oficina mañana a las 3:00 PM.</p>
+                      <p className="text-xs text-gray-500 mt-1">12:31 PM</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <div className="p-4 border-t">
+                <div className="flex space-x-2">
+                  <Input className="flex-grow" placeholder="Escribe un mensaje..." />
+                  <Button>Enviar</Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
       </div>
-
-      <Tabs defaultValue="recibidos">
-        <TabsList>
-          <TabsTrigger value="recibidos">Recibidos</TabsTrigger>
-          <TabsTrigger value="enviados">Enviados</TabsTrigger>
-          <TabsTrigger value="archivados">Archivados</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="recibidos" className="space-y-4 pt-4">
-          {receivedMessages.map((message) => (
-            <Card key={message.id}>
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl font-semibold">{message.subject}</h2>
-                      {!message.read && (
-                        <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                          Nuevo
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">De: {message.sender}</span>
-                    </div>
-                    {message.course && (
-                      <span className="text-sm text-muted-foreground block mt-1">
-                        {message.course}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{message.date}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                      {message.preview}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/messages/${message.id}`}>
-                      <Button>Leer mensaje</Button>
-                    </Link>
-                    <Button variant="outline" size="icon">
-                      <Star className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon">
-                      <Archive className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="enviados" className="space-y-4 pt-4">
-          {sentMessages.map((message) => (
-            <Card key={message.id}>
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold">{message.subject}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">Para: {message.recipient}</span>
-                    </div>
-                    {message.course && (
-                      <span className="text-sm text-muted-foreground block mt-1">
-                        {message.course}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{message.date}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                      {message.preview}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/messages/${message.id}`}>
-                      <Button variant="outline">Ver mensaje</Button>
-                    </Link>
-                    <Button variant="outline" size="icon">
-                      <Archive className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="archivados" className="space-y-4 pt-4">
-          {archivedMessages.map((message) => (
-            <Card key={message.id}>
-              <CardContent className="p-6">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-semibold">{message.subject}</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">De: {message.sender}</span>
-                    </div>
-                    {message.course && (
-                      <span className="text-sm text-muted-foreground block mt-1">
-                        {message.course}
-                      </span>
-                    )}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">{message.date}</span>
-                    </div>
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
-                      {message.preview}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Link href={`/messages/${message.id}`}>
-                      <Button variant="outline">Ver mensaje</Button>
-                    </Link>
-                    <Button variant="outline" size="icon">
-                      <Mail className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-      </Tabs>
-    </div>
-  )
+    </ProtectedRoute>
+  );
 }

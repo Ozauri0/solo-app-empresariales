@@ -1,9 +1,24 @@
+'use client'
+
+import ProtectedRoute from "@/components/protected-route";
+import { useState, useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+
+// Definición de tipos
+interface CalendarEvent {
+  id: number;
+  title: string;
+  course: string;
+  date: string;
+  time: string;
+  type: string;
+  description: string;
+}
 
 export default function CalendarPage() {
   // Datos de ejemplo para eventos del calendario
-  const events = [
+  const events: CalendarEvent[] = [
     {
       id: 1,
       title: "Entrega de Proyecto Final",
@@ -11,6 +26,7 @@ export default function CalendarPage() {
       date: "2025-04-25",
       time: "23:59",
       type: "deadline",
+      description: "Entrega final del proyecto del semestre",
     },
     {
       id: 2,
@@ -19,6 +35,7 @@ export default function CalendarPage() {
       date: "2025-04-28",
       time: "14:00 - 16:00",
       type: "exam",
+      description: "Examen sobre normalización y SQL avanzado",
     },
     {
       id: 3,
@@ -27,6 +44,7 @@ export default function CalendarPage() {
       date: "2025-05-02",
       time: "10:00 - 12:00",
       type: "lab",
+      description: "Práctica sobre redes neuronales",
     },
     {
       id: 4,
@@ -35,6 +53,7 @@ export default function CalendarPage() {
       date: "2025-05-05",
       time: "15:00 - 17:00",
       type: "workshop",
+      description: "Sesión de trabajo en equipo para diseño de arquitectura",
     },
     {
       id: 5,
@@ -43,13 +62,51 @@ export default function CalendarPage() {
       date: "2025-05-10",
       time: "18:00 - 20:00",
       type: "conference",
+      description: "Conferencia sobre ciberseguridad actual",
     },
   ];
 
-  // Obtener el día actual
-  const currentDate = new Date();
-  const currentMonth = currentDate.toLocaleString('es-ES', { month: 'long' });
-  const currentYear = currentDate.getFullYear();
+  // Estados para el calendario
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState('');
+  const [currentYear, setCurrentYear] = useState(0);
+  const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+  const [daysInMonth, setDaysInMonth] = useState(0);
+  const [firstDayOfMonth, setFirstDayOfMonth] = useState(0);
+  const [currentDay, setCurrentDay] = useState(0);
+
+  // Inicializar el calendario al cargar
+  useEffect(() => {
+    updateCalendarData(currentDate);
+  }, [currentDate]);
+
+  // Actualizar todos los datos del calendario
+  const updateCalendarData = (date: Date) => {
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    
+    setCurrentMonth(date.toLocaleString('es-ES', { month: 'long' }));
+    setCurrentYear(year);
+    setCurrentMonthIndex(month);
+    setCurrentDay(new Date().getDate());
+    
+    // Calcular los días en el mes actual
+    setDaysInMonth(new Date(year, month + 1, 0).getDate());
+    
+    // Calcular el primer día de la semana del mes (0 = Domingo, 1 = Lunes, etc.)
+    setFirstDayOfMonth(new Date(year, month, 1).getDay());
+  };
+
+  // Navegación del calendario
+  const handlePrevMonth = () => {
+    const prevMonth = new Date(currentYear, currentMonthIndex - 1, 1);
+    setCurrentDate(prevMonth);
+  };
+
+  const handleNextMonth = () => {
+    const nextMonth = new Date(currentYear, currentMonthIndex + 1, 1);
+    setCurrentDate(nextMonth);
+  };
 
   // Función para formatear la fecha en formato legible
   const formatDate = (dateString: string) => {
@@ -76,7 +133,7 @@ export default function CalendarPage() {
   };
 
   // Agrupar eventos por fecha
-  const eventsByDate: Record<string, typeof events> = {};
+  const eventsByDate: Record<string, CalendarEvent[]> = {};
   events.forEach(event => {
     if (!eventsByDate[event.date]) {
       eventsByDate[event.date] = [];
@@ -87,94 +144,151 @@ export default function CalendarPage() {
   // Ordenar fechas
   const sortedDates = Object.keys(eventsByDate).sort();
 
+  // Filtrar próximos eventos (solo los 3 más cercanos)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const upcomingEvents = events
+    .filter(event => new Date(event.date) >= today)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(0, 3);
+
   return (
-    <div className="container px-4 py-8 mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Calendario Académico</h1>
-        <div className="flex gap-2">
-          <Button variant="outline">Hoy</Button>
-          <Button variant="outline">Añadir Evento</Button>
+    <ProtectedRoute>
+      <div className="container px-4 py-8 mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Calendario Académico</h1>
+          <Button>Nuevo Evento</Button>
         </div>
-      </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">
-          {currentMonth.charAt(0).toUpperCase() + currentMonth.slice(1)} {currentYear}
-        </h2>
-        <div className="flex gap-2">
-          <Button variant="ghost" size="sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m15 18-6-6 6-6"/></svg>
-          </Button>
-          <Button variant="ghost" size="sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="m9 18 6-6-6-6"/></svg>
-          </Button>
-        </div>
-      </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card className="p-6">
+              <div className="mb-4 flex justify-between items-center">
+                <h2 className="text-xl font-bold">{currentMonth} {currentYear}</h2>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={handlePrevMonth}>Anterior</Button>
+                  <Button variant="outline" size="sm" onClick={handleNextMonth}>Siguiente</Button>
+                </div>
+              </div>
 
-      <Card className="p-6">
-        <div className="mb-6">
-          <div className="flex gap-3 mb-4">
-            <span className="inline-flex items-center rounded-full bg-red-100 text-red-800 px-2.5 py-0.5 text-xs font-medium">
-              Examen
-            </span>
-            <span className="inline-flex items-center rounded-full bg-orange-100 text-orange-800 px-2.5 py-0.5 text-xs font-medium">
-              Entrega
-            </span>
-            <span className="inline-flex items-center rounded-full bg-blue-100 text-blue-800 px-2.5 py-0.5 text-xs font-medium">
-              Laboratorio
-            </span>
-            <span className="inline-flex items-center rounded-full bg-purple-100 text-purple-800 px-2.5 py-0.5 text-xs font-medium">
-              Taller
-            </span>
-            <span className="inline-flex items-center rounded-full bg-green-100 text-green-800 px-2.5 py-0.5 text-xs font-medium">
-              Conferencia
-            </span>
+              <div className="grid grid-cols-7 gap-1">
+                {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map((day, i) => (
+                  <div key={i} className="text-center py-2 font-medium text-sm">
+                    {day}
+                  </div>
+                ))}
+
+                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
+                  <div key={`empty-${i}`} className="p-2 text-center"></div>
+                ))}
+
+                {Array.from({ length: daysInMonth }).map((_, i) => {
+                  const day = i + 1;
+                  const currentMonthStr = (currentMonthIndex + 1).toString().padStart(2, '0');
+                  const dayStr = day.toString().padStart(2, '0');
+                  const dateStr = `${currentYear}-${currentMonthStr}-${dayStr}`;
+                  
+                  const hasEvents = events.some(event => event.date === dateStr);
+                  
+                  const isToday = day === currentDay && 
+                                 currentMonthIndex === new Date().getMonth() &&
+                                 currentYear === new Date().getFullYear();
+                  
+                  return (
+                    <div 
+                      key={`day-${day}`}
+                      className={`p-2 min-h-[80px] border rounded-md ${
+                        isToday ? 'bg-slate-100 border-slate-800' : ''
+                      }`}
+                    >
+                      <div className="text-right mb-1">
+                        <span className={`text-sm ${isToday ? 'font-bold' : ''}`}>{day}</span>
+                      </div>
+                      {hasEvents && (
+                        <div className="mt-1">
+                          {events
+                            .filter(event => event.date === dateStr)
+                            .map((event, index) => (
+                              <div 
+                                key={index}
+                                className={`text-xs p-1 mb-1 rounded truncate ${getEventTypeColor(event.type)}`}
+                              >
+                                {event.title}
+                              </div>
+                            ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
           </div>
-        </div>
 
-        <div className="space-y-6">
-          {sortedDates.map(date => (
-            <div key={date} className="border-b pb-4 last:border-0">
-              <h3 className="text-lg font-semibold mb-2">{formatDate(date)}</h3>
-              <div className="space-y-3">
-                {eventsByDate[date].map(event => (
-                  <div 
-                    key={event.id} 
-                    className={`p-3 rounded-lg border ${getEventTypeColor(event.type)} flex justify-between items-start`}
-                  >
-                    <div>
-                      <h4 className="font-medium">{event.title}</h4>
-                      <p className="text-sm">{event.course}</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-medium">{event.time}</span>
-                    </div>
+          <div className="lg:col-span-1">
+            <Card className="p-6 mb-6">
+              <h2 className="text-xl font-bold mb-4">Próximos Eventos</h2>
+              <div className="space-y-4">
+                {upcomingEvents.map((event, index) => (
+                  <div key={index} className="border-l-4 border-slate-800 pl-4 py-2">
+                    <p className="font-semibold">{event.title}</p>
+                    <p className="text-sm text-gray-500">{formatDate(event.date)} - {event.time}</p>
+                    <p className="text-sm mt-1">{event.description}</p>
+                    <p className="text-xs mt-2 text-gray-500">{event.course}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          ))}
-        </div>
-      </Card>
+            </Card>
 
-      <div className="mt-6">
-        <Card className="p-6">
-          <h3 className="font-semibold mb-4">Próximos eventos importantes</h3>
-          <div className="space-y-3">
-            {events.slice(0, 3).map(event => (
-              <div key={event.id} className="flex justify-between items-center p-3 rounded-lg border hover:bg-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${event.type === 'exam' ? 'bg-red-500' : event.type === 'deadline' ? 'bg-orange-500' : 'bg-blue-500'}`}></div>
-                  <span>{event.title}</span>
+            <Card className="p-6">
+              <h2 className="text-xl font-bold mb-4">Crear Evento</h2>
+              <form className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Título</label>
+                  <input
+                    type="text"
+                    className="w-full p-2 border rounded-md"
+                    placeholder="Nombre del evento"
+                  />
                 </div>
-                <div className="text-sm text-gray-500">
-                  {formatDate(event.date)}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Fecha</label>
+                  <input
+                    type="date"
+                    className="w-full p-2 border rounded-md"
+                  />
                 </div>
-              </div>
-            ))}
+                <div>
+                  <label className="block text-sm font-medium mb-1">Hora</label>
+                  <input
+                    type="time"
+                    className="w-full p-2 border rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Tipo</label>
+                  <select className="w-full p-2 border rounded-md">
+                    <option value="clase">Clase</option>
+                    <option value="tarea">Tarea</option>
+                    <option value="examen">Examen</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Descripción</label>
+                  <textarea
+                    className="w-full p-2 border rounded-md"
+                    rows={3}
+                    placeholder="Detalles del evento"
+                  />
+                </div>
+                <Button className="w-full">Guardar Evento</Button>
+              </form>
+            </Card>
           </div>
-        </Card>
+        </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

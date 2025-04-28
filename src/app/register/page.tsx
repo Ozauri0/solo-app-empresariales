@@ -8,46 +8,111 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AlertCircle } from 'lucide-react'
 
 export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
-    username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     name: '',
-    role: 'student'
+    rut: '',
+    role: 'student' // Siempre será estudiante por defecto
   })
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    
+    if (name === 'rut') {
+      // Eliminar todos los caracteres no numéricos
+      const numericValue = value.replace(/\D/g, '')
+      
+      // Aplicar formato solo si hay contenido
+      if (numericValue) {
+        // Formatear RUT (ej: 123456789 -> 12.345.678-9)
+        setFormData(prev => ({
+          ...prev,
+          rut: formatRut(numericValue)
+        }))
+      } else {
+        // Si está vacío, limpiarlo
+        setFormData(prev => ({
+          ...prev,
+          rut: ''
+        }))
+      }
+    } else {
+      // Para el resto de los campos, comportamiento normal
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
   }
 
-  const handleRoleChange = (value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      role: value
-    }))
+  // Función para formatear RUT (ej: 123456789 -> 12.345.678-9)
+  const formatRut = (rut: string) => {
+    // Obtener dígito verificador
+    const dv = rut.slice(-1)
+    // Obtener el cuerpo del RUT sin el dígito verificador
+    let rutBody = rut.slice(0, -1)
+    
+    // Formatear con puntos
+    let formattedRut = ''
+    for (let i = rutBody.length - 1, j = 0; i >= 0; i--, j++) {
+      formattedRut = rutBody.charAt(i) + formattedRut
+      if (j === 2 && i !== 0) {
+        formattedRut = '.' + formattedRut
+        j = -1
+      }
+    }
+    
+    // Retornar RUT con formato completo
+    return `${formattedRut}-${dv}`
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Verificar que las contraseñas coincidan
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Las contraseñas no coinciden', {
+        description: 'Por favor, verifica que ambas contraseñas sean iguales',
+        icon: <AlertCircle className="h-5 w-5" />
+      })
+      
+      // Efecto de sacudida para el formulario cuando hay un error
+      const form = document.querySelector('form')
+      if (form) {
+        form.classList.add('shake')
+        setTimeout(() => {
+          form.classList.remove('shake')
+        }, 500)
+      }
+      
+      return
+    }
+
     setLoading(true)
 
     try {
+      // Crear el objeto a enviar (sin confirmPassword)
+      const { confirmPassword, ...dataToSend } = formData
+      
+      // Crear el objeto de datos a enviar con username
+      const registerData = {
+        ...dataToSend,
+        username: formData.email
+      }
+
       const response = await fetch('http://localhost:5000/api/users/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(registerData)
       })
 
       const data = await response.json()
@@ -104,7 +169,7 @@ export default function RegisterPage() {
         <Card className="w-full">
           <CardHeader>
             <CardTitle>Crear una cuenta</CardTitle>
-            <CardDescription>Complete el formulario para registrarse en nuestra plataforma</CardDescription>
+            <CardDescription>Complete el formulario para registrarse como estudiante</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit}>
@@ -122,15 +187,18 @@ export default function RegisterPage() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="username">Nombre de Usuario</Label>
+                  <Label htmlFor="rut">RUT</Label>
                   <Input 
-                    id="username" 
-                    name="username" 
-                    placeholder="juan123" 
+                    id="rut" 
+                    name="rut" 
+                    placeholder="12.345.678-9" 
                     required 
-                    value={formData.username}
+                    value={formData.rut}
                     onChange={handleChange}
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Ingrese solo números (ej: 123456789)
+                  </p>
                 </div>
                 
                 <div className="grid gap-2">
@@ -159,20 +227,15 @@ export default function RegisterPage() {
                 </div>
                 
                 <div className="grid gap-2">
-                  <Label htmlFor="role">Rol</Label>
-                  <Select 
-                    value={formData.role} 
-                    onValueChange={handleRoleChange}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione un rol" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Estudiante</SelectItem>
-                      <SelectItem value="teacher">Profesor</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="confirmPassword">Confirmar Contraseña</Label>
+                  <Input 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    type="password" 
+                    required 
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                  />
                 </div>
                 
                 <Button 
