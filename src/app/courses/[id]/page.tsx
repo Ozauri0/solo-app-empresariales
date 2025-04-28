@@ -57,18 +57,35 @@ export default function CourseDetailsPage() {
   const [userRole, setUserRole] = useState<string | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
   const [materials, setMaterials] = useState<CourseMaterial[]>([])
+  const [isInitialized, setIsInitialized] = useState(false) // Flag para controlar inicialización
 
   // Cargar datos del curso
   useEffect(() => {
+    // Evitar múltiples inicializaciones
+    if (isInitialized) return;
+    
     const storedUser = localStorage.getItem('user')
     if (storedUser) {
       const userData = JSON.parse(storedUser)
       setUserRole(userData.role)
       setUserId(userData.id)
     }
-    fetchCourse()
+    
+    // Solo hacer peticiones si tenemos un ID de curso
     if (id) {
-      fetchMaterials()
+      setIsInitialized(true); // Marcar como inicializado antes de hacer peticiones
+      const loadData = async () => {
+        try {
+          const courseLoaded = await fetchCourse()
+          if (courseLoaded) {
+            await fetchMaterials()
+          }
+        } catch (error) {
+          console.error("Error cargando datos:", error);
+        }
+      }
+      
+      loadData()
     }
   }, [id])
 
@@ -81,7 +98,7 @@ export default function CourseDetailsPage() {
         toast.error('Error de autenticación', {
           description: 'Por favor, inicia sesión de nuevo'
         })
-        return
+        return false
       }
 
       const response = await fetch(`http://localhost:5000/api/courses/${id}`, {
@@ -96,7 +113,7 @@ export default function CourseDetailsPage() {
             description: 'No tienes permiso para ver este curso'
           })
           router.push('/courses')
-          return
+          return false
         }
         throw new Error('Error al cargar el curso')
       }
@@ -104,15 +121,18 @@ export default function CourseDetailsPage() {
       const data = await response.json()
       if (data.success) {
         setCourse(data.course)
+        return true
       } else {
         toast.error('Error', {
           description: data.message || 'Error al cargar el curso'
         })
+        return false
       }
     } catch (error) {
       toast.error('Error de conexión', {
         description: 'No se pudo conectar con el servidor'
       })
+      return false
     } finally {
       setLoading(false)
     }
@@ -286,7 +306,7 @@ export default function CourseDetailsPage() {
               courseId={id as string} 
               students={course.students || []} 
               userRole={userRole} 
-              fetchCourse={fetchCourse} 
+              fetchCourse={async () => { await fetchCourse(); }} 
             />
           </TabsContent>
         </Tabs>

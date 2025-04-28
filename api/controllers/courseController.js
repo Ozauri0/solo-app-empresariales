@@ -43,68 +43,74 @@ exports.getAllCourses = async (req, res) => {
 // Obtener un curso por ID
 exports.getCourseById = async (req, res) => {
   try {
-    // Obtener el curso con información de instructor y estudiantes
-    const course = await Course.findById(req.params.id)
-      .populate('instructor', 'name email username')
-      .populate('students', 'name email username');
+    console.log(`Usuario (ID: ${req.user.id}, Rol: ${req.user.role}) solicitando acceso al curso ${req.params.id}`);
     
-    if (!course) {
+    // Obtener curso directamente sin popular primero (para verificaciones)
+    const courseRaw = await Course.findById(req.params.id);
+    
+    if (!courseRaw) {
       return res.status(404).json({
         success: false,
         message: 'Curso no encontrado'
       });
     }
     
-    // Verificación mejorada para permisos de acceso
-    const isAdmin = req.user.role === 'admin';
-    const isInstructor = course.instructor && 
-      course.instructor._id && 
-      course.instructor._id.toString() === req.user.id;
-    
-    // Verificación exhaustiva para estudiantes
-    let isStudent = false;
+    // Verificación directa en la base de datos primero
     const userId = req.user.id;
+    const isAdmin = req.user.role === 'admin';
     
-    // Método 1: Verificar en el array populado
-    if (course.students && course.students.length > 0) {
-      isStudent = course.students.some(student => 
-        (student._id && student._id.toString() === userId)
-      );
-    }
+    // Verificación directa de si el usuario es instructor del curso
+    console.log(`Comparando instructor del curso (${courseRaw.instructor}) con usuario (${userId})`);
     
-    // Método 2: Verificar en el array de IDs no populado (accediendo al documento interno)
-    if (!isStudent && course._doc && course._doc.students && Array.isArray(course._doc.students)) {
-      isStudent = course._doc.students.some(studentId => 
-        studentId.toString() === userId
-      );
-    }
+    // Datos en bruto de la base de datos para depuración
+    console.log(`Datos en bruto: 
+      - ID del curso: ${courseRaw._id}
+      - ID del instructor: ${courseRaw.instructor}
+      - ID del usuario: ${userId}
+      - Tipo del instructor: ${typeof courseRaw.instructor}
+      - Valor del instructor: ${courseRaw.instructor.toString()}
+      - ¿Son iguales?: ${courseRaw.instructor.toString() === userId}`);
     
-    // Método 3: Verificar con una búsqueda directa en la base de datos
-    if (!isStudent) {
-      const courseCheck = await Course.findOne({
-        _id: req.params.id,
-        students: userId
-      });
-      isStudent = !!courseCheck;
-    }
-    
-    console.log(`Usuario ${userId} verificando acceso al curso ${req.params.id}`);
-    console.log(`Es admin: ${isAdmin}, Es instructor: ${isInstructor}, Es estudiante: ${isStudent}`);
-    
-    // Denegar acceso si no tiene permisos
-    if (!isAdmin && !isInstructor && !isStudent) {
-      return res.status(403).json({
-        success: false,
-        message: 'No tienes permiso para ver este curso'
-      });
-    }
-    
-    res.status(200).json({
-      success: true,
-      course
+    // Realizar verificación directa mediante consulta a la base de datos
+    const isInstructorQuery = await Course.findOne({
+      _id: req.params.id,
+      instructor: userId
     });
+    
+    console.log(`Resultado de consulta directa para instructor: ${isInstructorQuery ? 'Encontrado' : 'No encontrado'}`);
+    
+    // Verificar si es estudiante mediante consulta
+    const isStudentQuery = await Course.findOne({
+      _id: req.params.id,
+      students: userId
+    });
+    
+    console.log(`Resultado de consulta directa para estudiante: ${isStudentQuery ? 'Encontrado' : 'No encontrado'}`);
+    
+    // Determinar acceso basado en las consultas directas
+    if (isAdmin || isInstructorQuery || isStudentQuery) {
+      // Obtener curso con datos populados para la respuesta
+      const coursePopulated = await Course.findById(req.params.id)
+        .populate('instructor', 'name email username')
+        .populate('students', 'name email username');
+      
+      console.log(`Acceso permitido para usuario ${userId} al curso ${req.params.id}`);
+      return res.status(200).json({
+        success: true,
+        course: coursePopulated
+      });
+    }
+    
+    // Si no tiene acceso
+    console.log(`Acceso denegado para usuario ${userId} al curso ${req.params.id}`);
+    return res.status(403).json({
+      success: false,
+      message: 'No tienes permiso para ver este curso'
+    });
+    
   } catch (error) {
     console.error(`Error en getCourseById: ${error.message}`);
+    console.error(error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener el curso',
@@ -120,6 +126,7 @@ exports.createCourse = async (req, res) => {
       title, 
       code, 
       description, 
+      instructorId,
       schedule, 
       startDate, 
       endDate 
@@ -139,7 +146,7 @@ exports.createCourse = async (req, res) => {
       title,
       code,
       description,
-      instructor: req.user.id,
+      instructor: instructorId || req.user.id, // Usar instructorId si existe, si no usar el ID del usuario actual
       schedule,
       startDate,
       endDate
@@ -166,7 +173,8 @@ exports.updateCourse = async (req, res) => {
   try {
     const { 
       title, 
-      description, 
+      description,
+      instructorId, 
       schedule, 
       startDate, 
       endDate 
@@ -197,6 +205,7 @@ exports.updateCourse = async (req, res) => {
         $set: {
           title: title || course.title,
           description: description || course.description,
+          instructor: instructorId || course.instructor, // Permitir actualizar el instructor
           schedule: schedule || course.schedule,
           startDate: startDate || course.startDate,
           endDate: endDate || course.endDate
