@@ -169,6 +169,8 @@ exports.createCourseMaterial = async (req, res) => {
     const { courseId } = req.params;
     const { title, description } = req.body;
     
+    console.log(`Intento de subir material al curso ${courseId} por usuario: ${req.user.id} (${req.user.role})`);
+    
     // Verificar si existe el curso
     const course = await Course.findById(courseId);
     if (!course) {
@@ -178,10 +180,9 @@ exports.createCourseMaterial = async (req, res) => {
       });
     }
     
-    // Verificar si el usuario es instructor del curso o admin
-    const isInstructor = course.instructor.toString() === req.user.id;
-    
-    if (req.user.role !== 'admin' && !isInstructor) {
+    // Verificar si el usuario es profesor o administrador
+    if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
+      console.log(`Usuario ${req.user.id} no tiene permisos para subir materiales al curso ${courseId}`);
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para subir materiales a este curso'
@@ -196,7 +197,7 @@ exports.createCourseMaterial = async (req, res) => {
       });
     }
     
-    // Crear URL para el archivo (ajustar según configuración del servidor)
+    // Crear URL para el archivo
     const fileUrl = `/uploads/course-materials/${req.file.filename}`;
     
     // Crear el nuevo material
@@ -219,6 +220,7 @@ exports.createCourseMaterial = async (req, res) => {
       material
     });
   } catch (error) {
+    console.error(`Error en createCourseMaterial: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Error al subir el material',
@@ -246,12 +248,8 @@ exports.updateCourseMaterial = async (req, res) => {
       });
     }
     
-    // Verificar si el usuario es instructor del curso o admin
-    const course = await Course.findById(courseId);
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isUploader = material.uploadedBy.toString() === req.user.id;
-    
-    if (req.user.role !== 'admin' && !isInstructor && !isUploader) {
+    // Verificar si el usuario es profesor o administrador
+    if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para editar este material'
@@ -289,6 +287,7 @@ exports.updateCourseMaterial = async (req, res) => {
       material
     });
   } catch (error) {
+    console.error(`Error en updateCourseMaterial: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Error al actualizar el material',
@@ -315,32 +314,29 @@ exports.deleteCourseMaterial = async (req, res) => {
       });
     }
     
-    // Verificar si el usuario es instructor del curso o admin
-    const course = await Course.findById(courseId);
-    const isInstructor = course.instructor.toString() === req.user.id;
-    const isUploader = material.uploadedBy.toString() === req.user.id;
-    
-    if (req.user.role !== 'admin' && !isInstructor && !isUploader) {
+    // Verificar si el usuario es profesor o administrador
+    if (req.user.role !== 'admin' && req.user.role !== 'teacher') {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para eliminar este material'
       });
     }
     
-    // Eliminar el archivo si existe (ajustar según configuración del servidor)
+    // Eliminar el archivo si existe
     const filePath = path.join(__dirname, '..', '..', 'public', material.fileUrl);
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
     
     // Eliminar el material de la base de datos
-    await material.remove();
+    await CourseMaterial.deleteOne({ _id: materialId });
     
     res.status(200).json({
       success: true,
       message: 'Material eliminado exitosamente'
     });
   } catch (error) {
+    console.error(`Error en deleteCourseMaterial: ${error.message}`);
     res.status(500).json({
       success: false,
       message: 'Error al eliminar el material',

@@ -71,6 +71,6 @@ router.get('/courses/:courseId/materials', protect, getCourseMaterials);
 router.get('/courses/:courseId/materials/:materialId', protect, getCourseMaterial);
 router.post('/courses/:courseId/materials', protect, authorize('teacher', 'admin'), upload.single('file'), createCourseMaterial);
 router.put('/courses/:courseId/materials/:materialId', protect, authorize('teacher', 'admin'), upload.single('file'), updateCourseMaterial);
-router.delete('/courses/:courseId/materials/:materialId', protect, deleteCourseMaterial);
+router.delete('/courses/:courseId/materials/:materialId', protect, authorize('teacher', 'admin'), deleteCourseMaterial);
 
 module.exports = router;
