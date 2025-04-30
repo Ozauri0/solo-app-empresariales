@@ -12,6 +12,7 @@ import { Bell, Calendar, FileText, Users } from "lucide-react"
 import CourseMaterials from "./components/CourseMaterials"
 import CourseStudents from "./components/CourseStudents"
 import CourseAlerts from "./components/CourseAlerts"
+import CourseHeader from "./components/CourseHeader"
 
 interface User {
   _id: string
@@ -26,6 +27,7 @@ interface Course {
   title: string
   code: string
   description: string
+  image?: string
   instructor: User
   students: User[]
   schedule?: {
@@ -179,7 +181,7 @@ export default function CourseDetailsPage() {
   // Verificar si el usuario es propietario del curso o admin
   const isOwnerOrAdmin = () => {
     if (!course || !userId) return false
-    return userRole === 'admin' || (course.instructor && course.instructor._id === userId)
+    return userRole === 'admin' || userRole === 'teacher' || (course.instructor && course.instructor._id === userId)
   }
 
   if (loading) {
@@ -213,17 +215,15 @@ export default function CourseDetailsPage() {
   return (
     <ProtectedRoute>
       <div className="space-y-6">
-        {/* Cabecera del curso */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">{course.title}</h1>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline">{course.code}</Badge>
-              <p className="text-sm text-muted-foreground">
-                Instructor: {course.instructor?.name || 'No asignado'}
-              </p>
-            </div>
-          </div>
+        {/* Cabecera del curso con imagen y título editable */}
+        <CourseHeader 
+          course={course} 
+          isOwnerOrAdmin={isOwnerOrAdmin()} 
+          onCourseUpdated={async () => { await fetchCourse(); }} 
+        />
+
+        {/* Botón para volver a la lista de cursos */}
+        <div className="flex justify-end">
           <Button onClick={() => router.push('/courses')} variant="outline">
             Volver a cursos
           </Button>

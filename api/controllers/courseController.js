@@ -228,6 +228,60 @@ exports.updateCourse = async (req, res) => {
   }
 };
 
+// Actualizar imagen de curso
+exports.updateCourseImage = async (req, res) => {
+  try {
+    // Verificar si hay un archivo en la solicitud
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No se ha subido ninguna imagen'
+      });
+    }
+
+    // Buscar el curso por ID
+    let course = await Course.findById(req.params.id);
+    
+    if (!course) {
+      return res.status(404).json({
+        success: false,
+        message: 'Curso no encontrado'
+      });
+    }
+
+    // Verificar si el usuario es el instructor o un administrador
+    if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'teacher') {
+      return res.status(403).json({
+        success: false,
+        message: 'No tienes permiso para actualizar este curso'
+      });
+    }
+
+    // Construir la ruta de la imagen
+    const imagePath = `/uploads/courses/${req.file.filename}`;
+
+    // Actualizar la imagen del curso
+    course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { $set: { image: imagePath } },
+      { new: true, runValidators: true }
+    ).populate('instructor', 'name email username');
+
+    res.status(200).json({
+      success: true,
+      message: 'Imagen del curso actualizada exitosamente',
+      course
+    });
+  } catch (error) {
+    console.error('Error al actualizar la imagen del curso:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al actualizar la imagen del curso',
+      error: error.message
+    });
+  }
+};
+
 // Eliminar un curso
 exports.deleteCourse = async (req, res) => {
   try {

@@ -14,6 +14,10 @@ const courseSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  image: {
+    type: String,
+    default: '/placeholder.svg?height=300&width=500'
+  },
   instructor: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

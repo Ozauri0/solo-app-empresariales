@@ -14,6 +14,7 @@ interface Course {
   title: string;
   code: string;
   description: string;
+  image?: string;
   instructor: {
     _id: string;
     name: string;
@@ -194,7 +195,7 @@ export default function CoursesPage() {
                   code: course.code,
                   name: course.title,
                   instructor: course.instructor?.name || 'Sin instructor asignado',
-                  image: "/placeholder.svg?height=100&width=200"
+                  image: course.image || "/placeholder.svg?height=200&width=400"
                 }} 
               />
             ))}
