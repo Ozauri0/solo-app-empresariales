@@ -21,8 +21,8 @@ export function CourseCard({ course }: CourseCardProps) {
         <Image 
           src={course.image || "/placeholder.svg?height=200&width=400"} 
           alt={course.name} 
-          width={640}
-          height={360}
+          width={400}
+          height={225}
           className="object-cover w-full h-full"
           style={{
             objectPosition: 'center'

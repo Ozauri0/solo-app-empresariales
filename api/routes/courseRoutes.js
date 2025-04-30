@@ -20,7 +20,12 @@ const { protect, authorize } = require('../middleware/authMiddleware');
 // Configuración de Multer para subida de archivos
 const storage = multer.diskStorage({
   destination: function(req, file, cb) {
-    cb(null, path.join(__dirname, '../../public/uploads/courses'));
+    // Crear la ruta del directorio si no existe
+    const uploadDir = path.join(__dirname, '../../public/uploads/courses');
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+    cb(null, uploadDir);
   },
   filename: function(req, file, cb) {
     cb(null, `course-${req.params.id}-${Date.now()}${path.extname(file.originalname)}`);
@@ -85,24 +90,9 @@ router.post('/:id/image', protect, authorize('teacher', 'admin'), upload.single(
     // Ruta de archivo original
     const filePath = req.file.path;
     
-    // Generar el nombre para la imagen procesada
-    const fileName = `course-${req.params.id}-${Date.now()}-optimized.webp`;
-    const outputPath = path.join(__dirname, '../../public/uploads/courses', fileName);
-    
-    // Procesamiento de imagen: redimensionar a tamaño estándar (1280x360 para banner)
-    await sharp(filePath)
-      .resize(1280, 360, {
-        fit: 'cover',
-        position: 'center'
-      })
-      .webp({ quality: 85 })
-      .toFile(outputPath);
-    
-    // Eliminar archivo original
-    fs.unlinkSync(filePath);
-    
+    // En lugar de crear una versión optimizada, usamos el archivo original
     // Construir la ruta de la imagen para almacenar en la base de datos
-    const imagePath = `/uploads/courses/${fileName}`;
+    const imagePath = `/uploads/courses/${req.file.filename}`;
 
     // Actualizar la imagen del curso
     course = await Course.findByIdAndUpdate(

@@ -263,9 +263,14 @@ exports.updateCourseMaterial = async (req, res) => {
     // Manejar actualización de archivo si se proporciona uno nuevo
     if (req.file) {
       // Eliminar archivo anterior si existe
-      const oldFilePath = path.join(__dirname, '..', '..', 'public', material.fileUrl);
-      if (fs.existsSync(oldFilePath)) {
-        fs.unlinkSync(oldFilePath);
+      try {
+        const oldFilePath = path.join(__dirname, '..', '..', 'public', material.fileUrl);
+        if (fs.existsSync(oldFilePath)) {
+          fs.unlinkSync(oldFilePath);
+        }
+      } catch (unlinkError) {
+        console.error('Error al eliminar el archivo anterior:', unlinkError);
+        // Continuamos el proceso aunque haya fallos al eliminar el archivo antiguo
       }
       
       // Crear URL para el nuevo archivo
@@ -323,9 +328,14 @@ exports.deleteCourseMaterial = async (req, res) => {
     }
     
     // Eliminar el archivo si existe
-    const filePath = path.join(__dirname, '..', '..', 'public', material.fileUrl);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
+    try {
+      const filePath = path.join(__dirname, '..', '..', 'public', material.fileUrl);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (unlinkError) {
+      console.error('Error al eliminar el archivo del material:', unlinkError);
+      // Continuamos el proceso aunque haya fallos al eliminar el archivo
     }
     
     // Eliminar el material de la base de datos
