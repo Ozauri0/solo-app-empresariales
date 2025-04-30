@@ -52,12 +52,30 @@ export default function LoginPage() {
       const data = await response.json()
 
       if (!response.ok) {
-        // Manejo específico de diferentes tipos de errores
+        // Manejo de errores sin lanzar excepciones
+        let errorMessage = data.message || 'Error al iniciar sesión'
         if (response.status === 401) {
-          throw new Error('Correo electrónico o contraseña incorrectos')
-        } else {
-          throw new Error(data.message || 'Error al iniciar sesión')
+          errorMessage = 'Correo electrónico o contraseña incorrectos'
         }
+        
+        // Mostrar mensaje de error con toast
+        toast.error('Error de inicio de sesión', {
+          description: errorMessage,
+          icon: <AlertCircle className="h-5 w-5" />
+        })
+        
+        // Efecto de sacudida para el formulario cuando hay un error
+        const form = document.querySelector('form')
+        if (form) {
+          form.classList.add('shake')
+          setTimeout(() => {
+            form.classList.remove('shake')
+          }, 500)
+        }
+        
+        // Terminar la ejecución aquí sin lanzar excepción
+        setLoading(false)
+        return
       }
 
       // Si el login es exitoso, guardar el token y redirigir al dashboard
@@ -76,9 +94,9 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error('Error de login:', err)
       
-      // Mostrar mensaje de error con toast
+      // Manejar errores de red o excepciones inesperadas
       toast.error('Error de inicio de sesión', {
-        description: err.message || 'No se pudo iniciar sesión',
+        description: 'Error de conexión. Intente nuevamente más tarde.',
         icon: <AlertCircle className="h-5 w-5" />
       })
       
