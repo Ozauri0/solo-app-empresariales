@@ -204,6 +204,7 @@ exports.updateCourse = async (req, res) => {
       {
         $set: {
           title: title || course.title,
+          code: req.body.code || course.code, // Añadir el código del curso
           description: description || course.description,
           instructor: instructorId || course.instructor, // Permitir actualizar el instructor
           schedule: schedule || course.schedule,
