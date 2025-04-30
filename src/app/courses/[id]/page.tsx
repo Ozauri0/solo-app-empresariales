@@ -178,9 +178,10 @@ export default function CourseDetailsPage() {
     }
   }
 
-  // Verificar si el usuario es propietario del curso o admin
-  const isOwnerOrAdmin = () => {
+  // Verificar si el usuario es admin, profesor o instructor del curso
+  const canEditCourse = () => {
     if (!course || !userId) return false
+    // Aseguramos que cualquier usuario con rol de profesor o admin pueda editar
     return userRole === 'admin' || userRole === 'teacher' || (course.instructor && course.instructor._id === userId)
   }
 
@@ -218,7 +219,7 @@ export default function CourseDetailsPage() {
         {/* Cabecera del curso con imagen y título editable */}
         <CourseHeader 
           course={course} 
-          isOwnerOrAdmin={isOwnerOrAdmin()} 
+          isOwnerOrAdmin={canEditCourse()} 
           onCourseUpdated={async () => { await fetchCourse(); }} 
         />
 

@@ -25,9 +25,9 @@ interface CourseStudentsProps {
 export default function CourseStudents({ courseId, students, userRole, fetchCourse }: CourseStudentsProps) {
   const [searchTerm, setSearchTerm] = useState("")
   const [isEnrollingStudent, setIsEnrollingStudent] = useState(false)
-  const [availableStudents, setAvailableStudents] = useState<User[]>([])
-  const [studentSearchTerm, setStudentSearchTerm] = useState("")
-  const [selectedStudent, setSelectedStudent] = useState("")
+  const [studentSearchEmail, setStudentSearchEmail] = useState("")
+  const [studentPreview, setStudentPreview] = useState<User | null>(null)
+  const [isSearching, setIsSearching] = useState(false)
   const [hasPermission, setHasPermission] = useState(false)
 
   // Verificar si el usuario realmente tiene permisos para administrar estudiantes
@@ -77,46 +77,58 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
     student.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  // Filtrar estudiantes disponibles por término de búsqueda
-  const filteredAvailableStudents = availableStudents.filter(student =>
-    student.name.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-    student.email.toLowerCase().includes(studentSearchTerm.toLowerCase()) ||
-    student.username.toLowerCase().includes(studentSearchTerm.toLowerCase())
-  )
-
-  // Obtener estudiantes disponibles (que no están inscritos en el curso)
-  const fetchAvailableStudents = async () => {
+  // Buscar estudiante por correo electrónico
+  const searchStudentByEmail = async () => {
+    if (!studentSearchEmail.trim()) {
+      toast.error('Campo requerido', {
+        description: 'Ingresa un correo electrónico para buscar'
+      })
+      return
+    }
+    
     try {
+      setIsSearching(true)
+      setStudentPreview(null)
+      
       const token = localStorage.getItem('token')
       if (!token) return
 
-      setIsEnrollingStudent(true)
-      const response = await fetch('http://localhost:5000/api/users?role=student', {
+      const response = await fetch(`http://localhost:5000/api/users/search?email=${encodeURIComponent(studentSearchEmail)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
       const data = await response.json()
-      if (data.success) {
-        // Filtrar estudiantes que ya están en el curso
-        const enrolledIds = students.map((student: User) => student._id)
-        const available = data.users.filter((user: User) => 
-          !enrolledIds.includes(user._id) && user.role === 'student'
-        )
-        setAvailableStudents(available)
+      
+      if (response.ok && data.success) {
+        // Verificar si el estudiante ya está inscrito en el curso
+        const isAlreadyEnrolled = students.some(student => student._id === data.user._id)
+        
+        if (isAlreadyEnrolled) {
+          toast.info('Estudiante ya inscrito', {
+            description: 'Este estudiante ya está inscrito en el curso'
+          })
+        } else {
+          setStudentPreview(data.user)
+        }
+      } else {
+        toast.error('Usuario no encontrado', {
+          description: 'No se encontró ningún usuario con ese correo electrónico'
+        })
       }
     } catch (error) {
-      console.error('Error al cargar estudiantes:', error)
-      toast.error('Error al cargar estudiantes', {
-        description: 'No se pudieron obtener los estudiantes disponibles'
+      toast.error('Error de conexión', {
+        description: 'No se pudo conectar con el servidor'
       })
+    } finally {
+      setIsSearching(false)
     }
   }
 
-  // Inscribir estudiante en el curso
-  const handleEnrollStudent = async () => {
-    if (!selectedStudent || !hasPermission) return
+  // Inscribir al estudiante previamente buscado
+  const handleEnrollFoundStudent = async () => {
+    if (!studentPreview || !hasPermission) return
 
     try {
       const token = localStorage.getItem('token')
@@ -128,7 +140,7 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ studentId: selectedStudent })
+        body: JSON.stringify({ studentId: studentPreview._id })
       })
 
       const data = await response.json()
@@ -137,7 +149,8 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
           description: 'El estudiante ha sido inscrito exitosamente'
         })
         fetchCourse() // Recargar datos del curso
-        setSelectedStudent("")
+        setStudentPreview(null)
+        setStudentSearchEmail("")
         setIsEnrollingStudent(false)
       } else {
         toast.error('Error', {
@@ -212,15 +225,13 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
               <CardTitle className="text-lg">Inscribir estudiante</CardTitle>
               <Button 
                 onClick={() => {
-                  if (isEnrollingStudent) {
-                    setIsEnrollingStudent(false)
-                  } else {
-                    fetchAvailableStudents()
-                  }
+                  setIsEnrollingStudent(!isEnrollingStudent)
+                  setStudentPreview(null)
+                  setStudentSearchEmail("")
                 }}
                 variant="outline"
               >
-                {isEnrollingStudent ? "Cancelar" : "Buscar estudiantes"}
+                {isEnrollingStudent ? "Cancelar" : "Inscribir estudiante"}
               </Button>
             </CardHeader>
             <CardContent>
@@ -228,17 +239,23 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Input
-                      placeholder="Buscar estudiantes por nombre, usuario o correo"
-                      value={studentSearchTerm}
-                      onChange={(e) => setStudentSearchTerm(e.target.value)}
+                      placeholder="Buscar estudiante por correo electrónico"
+                      value={studentSearchEmail}
+                      onChange={(e) => setStudentSearchEmail(e.target.value)}
                       className="flex-1"
                     />
+                    <Button 
+                      onClick={searchStudentByEmail}
+                      disabled={isSearching}
+                    >
+                      {isSearching ? "Buscando..." : "Buscar"}
+                    </Button>
                   </div>
                   
-                  {filteredAvailableStudents.length > 0 ? (
-                    <div className="border rounded-lg overflow-hidden max-h-[300px] overflow-y-auto">
+                  {studentPreview ? (
+                    <div className="border rounded-lg overflow-hidden">
                       <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50 sticky top-0">
+                        <thead className="bg-gray-50">
                           <tr>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Nombre
@@ -251,46 +268,44 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
                             </th>
                           </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {filteredAvailableStudents.map((student) => (
-                            <tr key={student._id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">{student.name}</div>
-                                <div className="text-sm text-gray-500">{student.username}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm text-gray-900">{student.email}</div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
-                                  onClick={() => {
-                                    setSelectedStudent(student._id)
-                                    handleEnrollStudent()
-                                  }}
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Inscribir
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
+                        <tbody className="bg-white">
+                          <tr className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">{studentPreview.name}</div>
+                              <div className="text-sm text-gray-500">{studentPreview.username}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-900">{studentPreview.email}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700"
+                                onClick={handleEnrollFoundStudent}
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Inscribir
+                              </Button>
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
+                    </div>
+                  ) : isSearching ? (
+                    <div className="text-center py-12 border rounded-lg">
+                      <div className="w-10 h-10 border-4 border-slate-800 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                      <p className="text-lg font-medium text-gray-500">Buscando estudiante...</p>
                     </div>
                   ) : (
                     <div className="text-center py-12 border rounded-lg">
                       <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                       <p className="text-lg font-medium text-gray-500">
-                        {studentSearchTerm 
-                          ? 'No se encontraron estudiantes con ese criterio' 
-                          : 'No hay estudiantes disponibles para inscribir'}
+                        {studentSearchEmail.trim()
+                          ? 'No se encontró ningún estudiante con ese correo'
+                          : 'Ingresa un correo electrónico para buscar un estudiante'}
                       </p>
                       <p className="text-sm text-gray-400">
-                        {studentSearchTerm 
-                          ? 'Intenta con otro término de búsqueda' 
-                          : 'Todos los estudiantes ya están inscritos o no hay estudiantes registrados'}
+                        Los estudiantes deben estar registrados en el sistema
                       </p>
                     </div>
                   )}
@@ -300,13 +315,13 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
                   <div className="text-center">
                     <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-lg font-medium text-gray-600">
-                      Busca estudiantes para inscribir
+                      Inscribe estudiantes en este curso
                     </p>
                     <p className="text-sm text-gray-400 mb-4">
-                      Haz clic en "Buscar estudiantes" para ver los estudiantes disponibles
+                      Busca estudiantes por su correo electrónico para inscribirlos
                     </p>
-                    <Button onClick={fetchAvailableStudents}>
-                      <Users className="w-4 h-4 mr-2" /> Buscar estudiantes
+                    <Button onClick={() => setIsEnrollingStudent(true)}>
+                      <Users className="w-4 h-4 mr-2" /> Inscribir estudiante
                     </Button>
                   </div>
                 </div>

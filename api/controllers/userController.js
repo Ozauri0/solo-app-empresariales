@@ -372,6 +372,37 @@ exports.getUserById = async (req, res) => {
   }
 };
 
+// Obtener un usuario por correo electrónico (para profesores y admins)
+exports.getUserByEmail = async (req, res) => {
+  try {
+    const email = req.query.email;
+    
+    // Buscar usuario con rol 'user' o 'student' por correo electrónico
+    const user = await User.findOne({ 
+      email: email, 
+      role: { $in: ['user', 'student'] } 
+    }).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Usuario no encontrado con ese correo electrónico'
+      });
+    }
+    
+    res.status(200).json({
+      success: true,
+      user
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Error al buscar el usuario por correo',
+      error: error.message
+    });
+  }
+};
+
 // Actualizar un usuario específico por ID (sólo admin)
 exports.updateUser = async (req, res) => {
   try {

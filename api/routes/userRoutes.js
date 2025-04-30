@@ -11,7 +11,8 @@ const {
   deleteUser,
   changePassword,
   closeSession,
-  closeAllSessions
+  closeAllSessions,
+  getUserByEmail
 } = require('../controllers/userController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 
@@ -25,6 +26,17 @@ router.put('/profile', protect, updateProfile);
 router.put('/password', protect, changePassword);
 router.post('/session/close', protect, closeSession);
 router.post('/session/close-all', protect, closeAllSessions);
+
+// Ruta para buscar usuario por email (permitida para profesores y admins)
+router.get('/search', protect, authorize('admin', 'teacher'), (req, res) => {
+  if (!req.query.email) {
+    return res.status(400).json({
+      success: false,
+      message: 'Se requiere un correo electrónico para la búsqueda'
+    });
+  }
+  getUserByEmail(req, res);
+});
 
 // Rutas de administrador
 router.get('/', protect, authorize('admin'), getAllUsers);

@@ -334,8 +334,8 @@ exports.enrollStudent = async (req, res) => {
       });
     }
 
-    // Verificar si el usuario es el instructor o un administrador
-    if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Verificar si el usuario es profesor, el instructor o un administrador
+    if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'teacher') {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para inscribir estudiantes en este curso'
@@ -392,8 +392,8 @@ exports.removeStudent = async (req, res) => {
       });
     }
 
-    // Verificar si el usuario es el instructor o un administrador
-    if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
+    // Verificar si el usuario es profesor, el instructor o un administrador
+    if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin' && req.user.role !== 'teacher') {
       return res.status(403).json({
         success: false,
         message: 'No tienes permiso para eliminar estudiantes de este curso'
