@@ -27,6 +27,7 @@ const messageRoutes = require('./routes/messageRoutes');
 const calendarRoutes = require('./routes/calendarRoutes');
 const courseMaterialRoutes = require('./routes/courseMaterialRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const newsRoutes = require('./routes/newsRoutes');
 
 // Usar rutas
 app.use('/api/users', userRoutes);
@@ -37,6 +38,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api', courseMaterialRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/news', newsRoutes);
 
 // Manejar errores de multer
 app.use((err, req, res, next) => {
