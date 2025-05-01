@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import { Bell } from "lucide-react"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface CourseNotification {
   _id: string
   title: string
@@ -48,7 +50,7 @@ export function CourseNotificationsCard({ notifications, token, onNotificationUp
   // Marcar notificación como leída
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`

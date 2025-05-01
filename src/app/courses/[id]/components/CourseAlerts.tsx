@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface NotificationProps {
   _id: string;
   title: string;
@@ -54,7 +56,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
     if (!courseId || !token || !user) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -97,7 +99,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
     setIsLoading(true);
     
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/course/${courseId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/course/${courseId}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -139,7 +141,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
   // Marcar notificación como leída
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`
@@ -167,7 +169,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
     setIsSubmitting(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -207,7 +209,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -245,7 +247,7 @@ const CourseAlerts: React.FC<CourseAlertsProps> = ({ courseId }) => {
     if (!editingNotification) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/${editingNotification._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${editingNotification._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

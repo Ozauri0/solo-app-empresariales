@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle } from 'lucide-react'
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function LoginPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -41,7 +43,7 @@ export default function LoginPage() {
     setLoading(true)
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/login', {
+      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

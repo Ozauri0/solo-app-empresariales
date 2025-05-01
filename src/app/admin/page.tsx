@@ -23,6 +23,8 @@ import {
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 // Interfaces para tipado
 interface User {
   _id: string;
@@ -120,7 +122,7 @@ export default function AdminPage() {
         return
       }
 
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${API_BASE_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -148,7 +150,7 @@ export default function AdminPage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch('http://localhost:5000/api/courses', {
+      const response = await fetch(`${API_BASE_URL}/api/courses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -178,11 +180,11 @@ export default function AdminPage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      let url = 'http://localhost:5000/api/users/register'
+      let url = `${API_BASE_URL}/api/users`
       let method = 'POST'
       
       if (editMode && selectedItem) {
-        url = `http://localhost:5000/api/users/${selectedItem._id}`
+        url = `${API_BASE_URL}/api/users/${selectedItem._id}`
         method = 'PUT'
       }
 
@@ -226,11 +228,11 @@ export default function AdminPage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      let url = 'http://localhost:5000/api/courses'
+      let url = `${API_BASE_URL}/api/courses`
       let method = 'POST'
       
       if (editMode && selectedItem) {
-        url = `http://localhost:5000/api/courses/${selectedItem._id}`
+        url = `${API_BASE_URL}/api/courses/${selectedItem._id}`
         method = 'PUT'
       }
 
@@ -276,7 +278,7 @@ export default function AdminPage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -312,7 +314,7 @@ export default function AdminPage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

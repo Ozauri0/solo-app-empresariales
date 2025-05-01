@@ -21,6 +21,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Pencil, Trash2 } from 'lucide-react';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface Notification {
   _id: string;
   title: string;
@@ -57,7 +59,7 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/user`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/user`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
@@ -88,7 +90,7 @@ export default function NotificationsPage() {
   // Marcar notificación como leída
   const markAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}/read`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}/read`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`
@@ -121,7 +123,7 @@ export default function NotificationsPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/notifications/${notificationId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${notificationId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`
@@ -159,7 +161,7 @@ export default function NotificationsPage() {
     if (!editingNotification) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/notifications/${editingNotification._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/notifications/${editingNotification._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface Course {
   _id: string;
   title: string;
@@ -84,7 +86,7 @@ export default function CoursesPage() {
         return;
       }
       
-      const response = await fetch('http://localhost:5000/api/courses', {
+      const response = await fetch(`${API_BASE_URL}/api/courses`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

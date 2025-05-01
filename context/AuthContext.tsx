@@ -3,6 +3,8 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface User {
   id: string;
   name: string;
@@ -90,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Usar el endpoint profile en lugar de validate
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -127,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await fetch('http://localhost:5000/api/users/login', {
+      const response = await fetch(`${API_BASE_URL}/api/users/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

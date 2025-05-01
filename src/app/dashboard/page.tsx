@@ -9,6 +9,8 @@ import { NewsCard } from "@/components/ui/news-card"
 import { CourseNotificationsCard } from "@/components/ui/course-notifications-card"
 import { toast } from "sonner"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function DashboardPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -49,7 +51,7 @@ export default function DashboardPage() {
   // Función para verificar el token con el backend
   const verifyToken = async (token: string) => {
     try {
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -77,7 +79,7 @@ export default function DashboardPage() {
   const loadDashboardData = async (token: string) => {
     try {
       // Cargar noticias
-      const newsResponse = await fetch('http://localhost:5000/api/news', {
+      const newsResponse = await fetch(`${API_BASE_URL}/api/news`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -89,7 +91,7 @@ export default function DashboardPage() {
       }
 
       // Cargar notificaciones de cursos
-      const notificationsResponse = await fetch('http://localhost:5000/api/notifications/user', {
+      const notificationsResponse = await fetch(`${API_BASE_URL}/api/notifications/user`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

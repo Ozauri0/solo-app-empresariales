@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Users, Plus, Trash2 } from "lucide-react"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface User {
   _id: string
   name: string
@@ -37,7 +39,7 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
         const token = localStorage.getItem('token')
         if (!token) return
 
-        const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -93,7 +95,7 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`http://localhost:5000/api/users/search?email=${encodeURIComponent(studentSearchEmail)}`, {
+      const response = await fetch(`${API_BASE_URL}/api/users/search?email=${encodeURIComponent(studentSearchEmail)}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -134,7 +136,7 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/enroll`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/enroll`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,7 +174,7 @@ export default function CourseStudents({ courseId, students, userRole, fetchCour
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/students`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/students`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',

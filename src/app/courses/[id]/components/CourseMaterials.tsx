@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from "@/components/ui/dialog"
 import { FileText, Pencil, Plus, Trash2, Upload } from "lucide-react"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface User {
   _id: string
   name: string
@@ -61,7 +63,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
         const token = localStorage.getItem('token')
         if (!token) return
 
-        const response = await fetch(`http://localhost:5000/api/courses/${courseId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -164,7 +166,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
       formData.append('description', description)
       formData.append('file', selectedFile)
 
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/materials`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/materials`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -228,7 +230,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
         formData.append('file', editFile)
       }
 
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/materials/${editingMaterial._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/materials/${editingMaterial._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -275,7 +277,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const response = await fetch(`http://localhost:5000/api/courses/${courseId}/materials/${materialId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/materials/${materialId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -427,7 +429,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
                         </h3>
                         <div className="flex items-center">
                           <a 
-                            href={`http://localhost:5000${material.fileUrl}`} 
+                            href={`${API_BASE_URL}${material.fileUrl}`} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 rounded-md px-2 py-1 text-sm"

@@ -10,8 +10,28 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Configuración de CORS
+const allowedOrigins = [
+  'http://localhost:3000', // Origen local estándar de Next.js
+  'http://192.168.1.167:3000', // IP local para acceso desde otros dispositivos (asumiendo que Next.js corre en el puerto 3000)
+  'http://192.168.1.167:5000', // Permitir solicitudes desde la propia API si es necesario
+  'https://lp.christianferrer.me' // URL de producción
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (como Postman o apps móviles) o si el origen está en la lista
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true // Si necesitas enviar cookies o encabezados de autorización
+};
+
 // Middleware
-app.use(cors());
+app.use(cors(corsOptions)); // Usar la configuración de CORS definida
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

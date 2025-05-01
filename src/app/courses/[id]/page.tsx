@@ -14,6 +14,8 @@ import CourseStudents from "./components/CourseStudents"
 import CourseAlerts from "./components/CourseAlerts"
 import CourseHeader from "./components/CourseHeader"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface User {
   _id: string
   name: string
@@ -104,7 +106,7 @@ export default function CourseDetailsPage() {
         return false
       }
 
-      const response = await fetch(`http://localhost:5000/api/courses/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -151,7 +153,7 @@ export default function CourseDetailsPage() {
       console.log(`Obteniendo materiales para courseId: ${id}`)
       
       // Cambiamos la URL para usar courseId como parámetro
-      const response = await fetch(`http://localhost:5000/api/courses/${id}/materials`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${id}/materials`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

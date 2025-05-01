@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Edit, Trash2, Upload } from "lucide-react"
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface CourseHeaderProps {
   course: {
     _id: string
@@ -41,7 +43,7 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
         return
       }
 
-      const response = await fetch(`http://localhost:5000/api/courses/${course._id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${course._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -87,7 +89,7 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
         return
       }
 
-      const response = await fetch(`http://localhost:5000/api/courses/${course._id}/image`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${course._id}/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -128,7 +130,7 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
       }
 
       // Usar una ruta específica para eliminar la imagen del curso
-      const response = await fetch(`http://localhost:5000/api/courses/${course._id}/image`, {
+      const response = await fetch(`${API_BASE_URL}/api/courses/${course._id}/image`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

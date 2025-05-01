@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface ProtectedRouteProps {
   children: React.ReactNode
   adminOnly?: boolean
@@ -25,7 +27,7 @@ export default function ProtectedRoute({ children, adminOnly = false }: Protecte
         }
         
         // Verificar el token y obtener información del usuario directamente del backend
-        const response = await fetch('http://localhost:5000/api/users/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`

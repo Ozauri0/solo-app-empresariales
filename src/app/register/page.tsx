@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertCircle } from 'lucide-react'
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export default function RegisterPage() {
   const router = useRouter()
   const [formData, setFormData] = useState({
@@ -107,7 +109,7 @@ export default function RegisterPage() {
         username: formData.email
       }
 
-      const response = await fetch('http://localhost:5000/api/users/register', {
+      const response = await fetch(`${API_BASE_URL}/api/users/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
