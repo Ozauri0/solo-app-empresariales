@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const fileUpload = require('express-fileupload'); // Añadir express-fileupload
 
 // Cargar variables de entorno
 dotenv.config();
@@ -35,6 +36,15 @@ app.use(cors(corsOptions)); // Usar la configuración de CORS definida
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Middleware para carga de archivos
+app.use(fileUpload({
+  limits: { fileSize: 10 * 1024 * 1024 }, // Límite de 10MB
+  createParentPath: true,  // Crear directorio si no existe
+  useTempFiles: true,      // Usar archivos temporales para reducir uso de memoria
+  tempFileDir: '/tmp/',    // Directorio para archivos temporales
+  abortOnLimit: true,      // Abortar la carga si se excede el límite
+}));
+
 // Configurar archivos estáticos
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
@@ -48,6 +58,7 @@ const calendarRoutes = require('./routes/calendarRoutes');
 const courseMaterialRoutes = require('./routes/courseMaterialRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const newsRoutes = require('./routes/newsRoutes');
+const uploadRoutes = require('./routes/uploadRoutes'); // Importar rutas de upload
 
 // Usar rutas
 app.use('/api/users', userRoutes);
@@ -59,6 +70,7 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api', courseMaterialRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/news', newsRoutes);
+app.use('/api/upload', uploadRoutes); // Añadir rutas de upload
 
 // Manejar errores de multer
 app.use((err, req, res, next) => {

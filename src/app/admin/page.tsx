@@ -18,7 +18,8 @@ import {
   Search,
   AlertCircle,
   X,
-  UserIcon
+  UserIcon,
+  NewspaperIcon
 } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -453,6 +454,11 @@ export default function AdminPage() {
     course.code.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  // Función para ir a la página de administración de noticias
+  const navigateToNewsAdmin = () => {
+    router.push('/admin/news');
+  }
+
   return (
     <ProtectedRoute adminOnly>
       <div className="space-y-6">
@@ -469,7 +475,7 @@ export default function AdminPage() {
           </div>
         ) : (
           <Tabs defaultValue="users" className="space-y-4" onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="users">
                 <UserIcon className="mr-2 h-4 w-4" />
                 Usuarios
@@ -477,6 +483,26 @@ export default function AdminPage() {
               <TabsTrigger value="courses">
                 <BookIcon className="mr-2 h-4 w-4" />
                 Cursos
+              </TabsTrigger>
+              <TabsTrigger value="news" onClick={navigateToNewsAdmin}>
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  className="mr-2 h-4 w-4"
+                >
+                  <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"></path>
+                  <path d="M18 14h-8"></path>
+                  <path d="M15 18h-5"></path>
+                  <path d="M10 6h8v4h-8V6Z"></path>
+                </svg>
+                Noticias
               </TabsTrigger>
             </TabsList>
 
@@ -921,6 +947,22 @@ export default function AdminPage() {
                   </div>
                 </div>
               )}
+            </TabsContent>
+
+            {/* PESTAÑA DE NOTICIAS */}
+            <TabsContent value="news" className="space-y-4">
+              <Card>
+                <CardContent className="py-8">
+                  <div className="text-center">
+                    <p className="mb-4">Redirigiendo a la página de gestión de noticias...</p>
+                    <div className="flex justify-center">
+                      <Button onClick={navigateToNewsAdmin}>
+                        Ir a gestión de noticias
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
         )}

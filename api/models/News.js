@@ -8,8 +8,8 @@ const newsSchema = new mongoose.Schema({
   },
   content: {
     type: String,
-    required: true,
-    trim: true
+    trim: true,
+    default: ''
   },
   author: {
     type: mongoose.Schema.Types.ObjectId,
@@ -23,6 +23,10 @@ const newsSchema = new mongoose.Schema({
   isPublished: {
     type: Boolean,
     default: true
+  },
+  isVisible: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,

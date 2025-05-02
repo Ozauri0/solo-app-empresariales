@@ -16,7 +16,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [courses, setCourses] = useState([])
-  const [news, setNews] = useState([])
+  const [visibleNews, setVisibleNews] = useState<any>(null)
   const [courseNotifications, setCourseNotifications] = useState([])
   const [token, setToken] = useState<string>('')
 
@@ -78,8 +78,8 @@ export default function DashboardPage() {
   // Función para cargar los datos del dashboard
   const loadDashboardData = async (token: string) => {
     try {
-      // Cargar noticias
-      const newsResponse = await fetch(`${API_BASE_URL}/api/news`, {
+      // Cargar la noticia visible para el dashboard
+      const newsResponse = await fetch(`${API_BASE_URL}/api/news/visible`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -87,7 +87,7 @@ export default function DashboardPage() {
       
       if (newsResponse.ok) {
         const newsData = await newsResponse.json()
-        setNews(newsData)
+        setVisibleNews(newsData.news)  // Puede ser null si no hay noticias visibles
       }
 
       // Cargar notificaciones de cursos
@@ -167,7 +167,7 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* Sección de Noticias - Ocupa 2 columnas en pantallas grandes */}
         <div className="col-span-full md:col-span-2">
-          <NewsCard news={news} />
+          <NewsCard news={visibleNews} />
         </div>
 
         {/* Panel lateral con notificaciones de cursos y calendario */}
