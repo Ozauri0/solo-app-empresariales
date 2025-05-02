@@ -11,8 +11,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge'
 import { toast } from 'sonner'
 import { Eye, EyeOff } from 'lucide-react'
+import AdminNav from '@/components/admin/admin-nav'
+import ProtectedRoute from '@/components/protected-route'
+import { API_BASE_URL } from '@/lib/utils'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const TINYMCE_API_KEY = process.env.NEXT_PUBLIC_TINYMCE_API_KEY;
 
 interface NewsItem {
@@ -302,206 +304,211 @@ export default function NewsAdminPage() {
   }
 
   return (
-    <div className="container mx-auto py-6">
-      <h1 className="text-3xl font-bold mb-6">Administración de Noticias</h1>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="list">Listado de Noticias</TabsTrigger>
-          <TabsTrigger value="create">{editingNews ? 'Editar Noticia' : 'Crear Noticia'}</TabsTrigger>
-        </TabsList>
-        
-        {/* Listado de Noticias */}
-        <TabsContent value="list" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Noticias Existentes</h2>
-            <Button 
-              onClick={() => {
-                resetForm();
-                setActiveTab('create');
-              }}
-            >
-              Crear Nueva Noticia
-            </Button>
-          </div>
-          
-          {news.length === 0 ? (
-            <Card>
-              <CardContent className="pt-6">
-                <p className="text-center text-muted-foreground">No hay noticias disponibles</p>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {news.map((item) => (
-                <Card key={item._id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle>{item.title}</CardTitle>
-                        <CardDescription>
-                          Creada: {new Date(item.createdAt).toLocaleDateString()}
-                        </CardDescription>
-                      </div>
-                      <div className="flex space-x-1">
-                        {item.isVisible && (
-                          <Badge className="bg-green-500">Visible</Badge>
-                        )}
-                        {!item.isVisible && (
-                          <Badge variant="outline">Oculta</Badge>
-                        )}
-                      </div>
-                    </div>
+    <ProtectedRoute adminOnly>
+      <div className="space-y-6">
+        {/* Componente de navegación compartido */}
+        <AdminNav />
+
+        <div className="container mx-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="list">Listado de Noticias</TabsTrigger>
+              <TabsTrigger value="create">{editingNews ? 'Editar Noticia' : 'Crear Noticia'}</TabsTrigger>
+            </TabsList>
+            
+            {/* Listado de Noticias */}
+            <TabsContent value="list" className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Noticias Existentes</h2>
+                <Button 
+                  onClick={() => {
+                    resetForm();
+                    setActiveTab('create');
+                  }}
+                >
+                  Crear Nueva Noticia
+                </Button>
+              </div>
+              
+              {news.length === 0 ? (
+                <Card>
+                  <CardContent className="pt-6">
+                    <p className="text-center text-muted-foreground">No hay noticias disponibles</p>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="space-y-4">
+                  {news.map((item) => (
+                    <Card key={item._id}>
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <CardTitle>{item.title}</CardTitle>
+                            <CardDescription>
+                              Creada: {new Date(item.createdAt).toLocaleDateString()}
+                            </CardDescription>
+                          </div>
+                          <div className="flex space-x-1">
+                            {item.isVisible && (
+                              <Badge className="bg-green-500">Visible</Badge>
+                            )}
+                            {!item.isVisible && (
+                              <Badge variant="outline">Oculta</Badge>
+                            )}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-col md:flex-row gap-4">
+                          {item.image && (
+                            <div className="w-full md:w-1/4">
+                              <img 
+                                src={item.image} 
+                                alt={item.title} 
+                                className="rounded-md w-full h-32 object-cover"
+                              />
+                            </div>
+                          )}
+                          <div className={`w-full ${item.image ? 'md:w-3/4' : ''}`}>
+                            <div 
+                              className="text-sm prose max-w-none line-clamp-3" 
+                              dangerouslySetInnerHTML={{ __html: item.content }}
+                            />
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Autor: {item.author?.name}
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => toggleVisibility(item._id, !item.isVisible)}
+                            title={item.isVisible ? "Ocultar noticia" : "Hacer visible"}
+                          >
+                            {item.isVisible ? (
+                              <Eye className="h-4 w-4" />
+                            ) : (
+                              <EyeOff className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
+                            Editar
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
+                            onClick={() => deleteNews(item._id)}
+                          >
+                            Eliminar
+                          </Button>
+                        </div>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+            
+            {/* Formulario de Crear/Editar */}
+            <TabsContent value="create">
+              <Card>
+                <form onSubmit={handleSubmit}>
+                  <CardHeader>
+                    <CardTitle>{editingNews ? 'Editar Noticia' : 'Crear Nueva Noticia'}</CardTitle>
+                    <CardDescription>
+                      Completa el formulario para {editingNews ? 'actualizar la' : 'crear una nueva'} noticia
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col md:flex-row gap-4">
-                      {item.image && (
-                        <div className="w-full md:w-1/4">
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="title">Título *</Label>
+                      <Input 
+                        id="title" 
+                        name="title" 
+                        placeholder="Título de la noticia" 
+                        value={formData.title} 
+                        onChange={handleInputChange} 
+                        required
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="content">Contenido</Label>
+                      <Editor
+                        id="content"
+                        apiKey={TINYMCE_API_KEY}
+                        init={{
+                          height: 300,
+                          menubar: false,
+                          plugins: [
+                            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+                            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                            'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
+                          ],
+                          toolbar: 'undo redo | blocks | ' +
+                            'bold italic forecolor | alignleft aligncenter ' +
+                            'alignright alignjustify | bullist numlist outdent indent | ' +
+                            'removeformat | help',
+                          content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
+                        }}
+                        value={formData.content}
+                        onEditorChange={handleEditorChange}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label htmlFor="image">Imagen</Label>
+                      <Input 
+                        id="image-upload" 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleImageUpload} 
+                        disabled={isUploading}
+                      />
+                      {formData.image && (
+                        <div className="mt-2">
                           <img 
-                            src={item.image} 
-                            alt={item.title} 
-                            className="rounded-md w-full h-32 object-cover"
+                            src={formData.image} 
+                            alt="Vista previa" 
+                            className="max-h-40 rounded-md"
                           />
                         </div>
                       )}
-                      <div className={`w-full ${item.image ? 'md:w-3/4' : ''}`}>
-                        <div 
-                          className="text-sm prose max-w-none line-clamp-3" 
-                          dangerouslySetInnerHTML={{ __html: item.content }}
-                        />
-                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id="isVisible"
+                        name="isVisible"
+                        className="rounded"
+                        checked={formData.isVisible}
+                        onChange={handleInputChange}
+                      />
+                      <Label htmlFor="isVisible">Mostrar en el Dashboard</Label>
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <div className="text-sm text-muted-foreground">
-                      Autor: {item.author?.name}
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => toggleVisibility(item._id, !item.isVisible)}
-                        title={item.isVisible ? "Ocultar noticia" : "Hacer visible"}
-                      >
-                        {item.isVisible ? (
-                          <Eye className="h-4 w-4" />
-                        ) : (
-                          <EyeOff className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => handleEdit(item)}>
-                        Editar
-                      </Button>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 hover:border-red-300"
-                        onClick={() => deleteNews(item._id)}
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
+                    <Button type="button" variant="outline" onClick={() => {
+                      resetForm();
+                      setActiveTab('list');
+                    }}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit">
+                      {editingNews ? 'Actualizar Noticia' : 'Crear Noticia'}
+                    </Button>
                   </CardFooter>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-        
-        {/* Formulario de Crear/Editar */}
-        <TabsContent value="create">
-          <Card>
-            <form onSubmit={handleSubmit}>
-              <CardHeader>
-                <CardTitle>{editingNews ? 'Editar Noticia' : 'Crear Nueva Noticia'}</CardTitle>
-                <CardDescription>
-                  Completa el formulario para {editingNews ? 'actualizar la' : 'crear una nueva'} noticia
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="title">Título *</Label>
-                  <Input 
-                    id="title" 
-                    name="title" 
-                    placeholder="Título de la noticia" 
-                    value={formData.title} 
-                    onChange={handleInputChange} 
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="content">Contenido</Label>
-                  <Editor
-                    id="content"
-                    apiKey={TINYMCE_API_KEY}
-                    init={{
-                      height: 300,
-                      menubar: false,
-                      plugins: [
-                        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
-                        'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
-                        'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount'
-                      ],
-                      toolbar: 'undo redo | blocks | ' +
-                        'bold italic forecolor | alignleft aligncenter ' +
-                        'alignright alignjustify | bullist numlist outdent indent | ' +
-                        'removeformat | help',
-                      content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-                    }}
-                    value={formData.content}
-                    onEditorChange={handleEditorChange}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="image">Imagen</Label>
-                  <Input 
-                    id="image-upload" 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={handleImageUpload} 
-                    disabled={isUploading}
-                  />
-                  {formData.image && (
-                    <div className="mt-2">
-                      <img 
-                        src={formData.image} 
-                        alt="Vista previa" 
-                        className="max-h-40 rounded-md"
-                      />
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="isVisible"
-                    name="isVisible"
-                    className="rounded"
-                    checked={formData.isVisible}
-                    onChange={handleInputChange}
-                  />
-                  <Label htmlFor="isVisible">Mostrar en el Dashboard</Label>
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="outline" onClick={() => {
-                  resetForm();
-                  setActiveTab('list');
-                }}>
-                  Cancelar
-                </Button>
-                <Button type="submit">
-                  {editingNews ? 'Actualizar Noticia' : 'Crear Noticia'}
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+                </form>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </ProtectedRoute>
   );
 }
