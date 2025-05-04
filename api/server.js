@@ -75,6 +75,12 @@ app.use('/uploads/course-materials', express.static(path.join(__dirname, '..', '
   etag: true
 }));
 
+// Configuración específica para imágenes de cursos
+app.use('/uploads/courses', express.static(path.join(__dirname, '..', 'public', 'uploads', 'courses'), {
+  maxAge: '1d',
+  etag: true
+}));
+
 // Ruta adicional para debugging y diagnóstico
 app.get('/check-file/:folder/:filename', (req, res) => {
   const { folder, filename } = req.params;

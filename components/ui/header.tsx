@@ -37,7 +37,7 @@ export function Header() {
           </Button>
           
           <Button variant="ghost" size="icon">
-          <Link href="/notifications"></Link>
+            
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notificaciones</span>
           </Button>

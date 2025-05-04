@@ -32,6 +32,27 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Función para construir la URL correcta para las imágenes de cursos
+  const getCourseImageUrl = (imagePath?: string): string => {
+    // Si no hay imagen, usar un placeholder
+    if (!imagePath) {
+      return '/placeholder.svg?height=300&width=1000';
+    }
+    
+    // Si la imagen ya es una URL completa, devolverla tal cual
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Si es una ruta que comienza con / y tenemos API_BASE_URL definido, añadir el prefijo
+    if (imagePath.startsWith('/') && API_BASE_URL) {
+      return `${API_BASE_URL}${imagePath}`;
+    }
+    
+    // En producción (API_BASE_URL vacío) o para rutas relativas
+    return imagePath;
+  };
+
   // Función para actualizar el título del curso
   const updateCourseTitle = async () => {
     try {
@@ -209,7 +230,7 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
       {/* Banner de imagen del curso */}
       <div className="relative w-full h-60 rounded-lg overflow-hidden mb-6">
         <Image
-          src={course.image || '/placeholder.svg?height=300&width=1000'}
+          src={getCourseImageUrl(course.image)}
           alt={course.title}
           width={1280}
           height={360}
