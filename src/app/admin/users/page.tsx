@@ -220,10 +220,60 @@ export default function UsersAdminPage() {
   // Manejar cambios en formulario de usuario
   const handleUserFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setUserForm(prev => ({
-      ...prev,
-      [name]: value
-    }))
+    
+    if (name === 'rut') {
+      // Eliminar todos los caracteres no numéricos
+      const numericValue = value.replace(/\D/g, '')
+      
+      // Aplicar formato solo si hay contenido
+      if (numericValue) {
+        // Formatear RUT (ej: 123456789 -> 12.345.678-9)
+        setUserForm(prev => ({
+          ...prev,
+          rut: formatRut(numericValue)
+        }))
+      } else {
+        // Si está vacío, limpiarlo
+        setUserForm(prev => ({
+          ...prev,
+          rut: ''
+        }))
+      }
+    } else if (name === 'email') {
+      // Si cambia el email, actualizar también el username
+      setUserForm(prev => ({
+        ...prev,
+        [name]: value,
+        username: value // El username será igual al email
+      }))
+    } else {
+      // Para el resto de los campos, comportamiento normal
+      setUserForm(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
+  }
+
+  // Función para formatear RUT (ej: 123456789 -> 12.345.678-9)
+  const formatRut = (rut: string) => {
+    // Obtener dígito verificador
+    const dv = rut.slice(-1)
+    // Obtener el cuerpo del RUT sin el dígito verificador
+    let rutBody = rut.slice(0, -1)
+    
+    // Formatear con puntos
+    let formattedRut = ''
+    for (let i = rutBody.length - 1, j = 0; i >= 0; i--, j++) {
+      formattedRut = rutBody.charAt(i) + formattedRut
+      if (j === 2 && i !== 0) {
+        formattedRut = '.' + formattedRut
+        j = -1
+      }
+    }
+    
+    // Retornar RUT con formato completo
+    return `${formattedRut}-${dv}`
   }
 
   // Filtrar usuarios según término de búsqueda
@@ -390,17 +440,9 @@ export default function UsersAdminPage() {
                     onChange={handleUserFormChange} 
                     required 
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="username">Nombre de usuario</Label>
-                  <Input 
-                    id="username" 
-                    name="username" 
-                    value={userForm.username} 
-                    onChange={handleUserFormChange} 
-                    required 
-                  />
+                  <p className="text-xs text-muted-foreground">
+                    Este correo se usará también como nombre de usuario
+                  </p>
                 </div>
                 
                 <div className="space-y-2">
@@ -443,6 +485,9 @@ export default function UsersAdminPage() {
                     value={userForm.rut} 
                     onChange={handleUserFormChange} 
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Ingrese solo números (ej: 123456789)
+                  </p>
                 </div>
 
                 <div className="pt-4 flex justify-end space-x-2">

@@ -43,5 +43,7 @@ router.get('/', protect, authorize('admin'), getAllUsers);
 router.get('/:id', protect, authorize('admin'), getUserById);
 router.put('/:id', protect, authorize('admin'), updateUser);
 router.delete('/:id', protect, authorize('admin'), deleteUser);
+// Añadir ruta POST para crear usuarios desde el panel de administración
+router.post('/', protect, authorize('admin'), register);
 
 module.exports = router;
