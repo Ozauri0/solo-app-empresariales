@@ -2,26 +2,36 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Instalar herramientas necesarias para debugging
+RUN apk add --no-cache bash curl
+
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias
-RUN npm install
+# Instalar dependencias con configuraciones de npm optimizadas para producción
+RUN npm ci --only=production
 
 # Copiar el código fuente
 COPY . .
 
-# Crear directorios necesarios para uploads si no existen
-RUN mkdir -p ./public/uploads/news
-RUN mkdir -p ./public/uploads/courses
-RUN mkdir -p ./public/uploads/course-materials
+# Crear directorios necesarios para uploads con permisos adecuados
+RUN mkdir -p ./public/uploads/news && \
+    mkdir -p ./public/uploads/courses && \
+    mkdir -p ./public/uploads/course-materials && \
+    chmod -R 777 ./public/uploads
 
-# Puerto en el que se ejecutará la aplicación
+# Crear directorio temporal con permisos adecuados
+RUN mkdir -p /tmp/course-materials && \
+    chmod -R 777 /tmp
+
+# Configurar variables de entorno
 ENV PORT=5005
 ENV NODE_ENV=production
+# Aumentar el límite de tamaño de payload para Node.js
+ENV NODE_OPTIONS=--max-http-header-size=16384
 
 # Exponer el puerto
 EXPOSE 5005
 
-# Comando para iniciar la aplicación
-CMD ["node", "server.js"]
+# Comando para iniciar la aplicación con más memoria disponible
+CMD ["node", "--max-old-space-size=2048", "server.js"]

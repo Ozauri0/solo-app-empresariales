@@ -39,20 +39,33 @@ const corsOptions = {
 
 // Middleware
 app.use(cors(corsOptions)); // Usar la configuración de CORS definida
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// Middleware para carga de archivos
-app.use(fileUpload({
-  limits: { fileSize: 10 * 1024 * 1024 }, // Límite de 10MB
-  createParentPath: true,  // Crear directorio si no existe
-  useTempFiles: true,      // Usar archivos temporales para reducir uso de memoria
-  tempFileDir: '/tmp/',    // Directorio para archivos temporales
-  abortOnLimit: true,      // Abortar la carga si se excede el límite
+// Aumentar límites para JSON y datos codificados en URL para formularios grandes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Configurar middleware para carga de archivos (express-fileupload)
+// Solo usar para rutas específicas que no usen multer
+const fileUploadMiddleware = fileUpload({
+  limits: { 
+    fileSize: 50 * 1024 * 1024 // Aumentar a 50MB para archivos grandes
+  },
+  createParentPath: true,      // Crear directorio si no existe
+  useTempFiles: true,          // Usar archivos temporales para reducir uso de memoria
+  tempFileDir: '/tmp/',        // Directorio para archivos temporales
+  abortOnLimit: false,         // No abortar automáticamente para manejar error correctamente
+  debug: process.env.NODE_ENV !== 'production' // Habilitar depuración fuera de producción
+});
+
+// Solo aplicar express-fileupload a rutas específicas que lo necesiten
+app.use('/api/upload', fileUploadMiddleware);
+app.use('/api/news', fileUploadMiddleware);
+
+// Configurar archivos estáticos con caché optimizada
+app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads'), {
+  maxAge: '1d', // Caché por 1 día
+  etag: true
 }));
-
-// Configurar archivos estáticos
-app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads')));
 
 // Importar rutas
 const userRoutes = require('./routes/userRoutes');
@@ -78,8 +91,10 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/upload', uploadRoutes); // Añadir rutas de upload
 
-// Manejar errores de multer
+// Manejar errores de multer y otros middleware de subida
 app.use((err, req, res, next) => {
+  console.error('Error en middleware:', err);
+  
   if (err && err.message === 'Tipo de archivo no permitido') {
     res.status(400).json({
       success: false,
@@ -90,11 +105,17 @@ app.use((err, req, res, next) => {
       success: false,
       message: 'El archivo excede el tamaño máximo permitido'
     });
+  } else if (err && err.message && err.message.includes('Unexpected end of form')) {
+    res.status(400).json({
+      success: false,
+      message: 'La carga del archivo se interrumpió. Esto puede deberse a una conexión inestable o a un archivo demasiado grande.',
+      error: err.message
+    });
   } else if (err) {
-    console.error(err);
     res.status(500).json({
       success: false,
-      message: 'Error en el servidor'
+      message: 'Error en el servidor al procesar el archivo',
+      error: err.message
     });
   } else {
     next();

@@ -17,6 +17,11 @@ services:
       - api
     networks:
       - app-network
+    # Aumentar límites de recursos para el frontend
+    deploy:
+      resources:
+        limits:
+          memory: 2G
 
   # Servicio de backend (API)
   api:
@@ -24,7 +29,7 @@ services:
       context: ./api
       dockerfile: Dockerfile
     container_name: solo-app-api
-    restart: always
+    restart: unless-stopped
     ports:
       - "5005:5005"
     environment:
@@ -32,10 +37,20 @@ services:
       - PORT=5005
       - MONGODB_URI=mongodb://mongodb:27017/solo-app
       - JWT_SECRET=tu_secreto_super_seguro_para_produccion_2025
+      # Límites para subidas de archivos
+      - UPLOAD_MAX_FILE_SIZE=50MB
+      - NODE_MAX_HTTP_HEADER_SIZE=16384
     depends_on:
       - mongodb
     volumes:
       - ./api/public:/app/public
+      # Montar directorio temporal para mejorar manejo de archivos grandes
+      - uploads-temp:/tmp
+    # Aumentar límites de recursos para la API
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     networks:
       - app-network
 
@@ -48,6 +63,10 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
+      # Optimizar configuración de MongoDB
+    command: --wiredTigerCacheSizeGB 1
+    environment:
+      - MONGO_INITDB_DATABASE=solo-app
     networks:
       - app-network
 
@@ -57,3 +76,5 @@ networks:
 
 volumes:
   mongodb-data:
+  # Volumen dedicado para archivos temporales
+  uploads-temp:
