@@ -11,9 +11,9 @@ export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || '';
 // Variable para el año actual
 export const currentYear = new Date().getFullYear();
 
-// Función para formatear fechas
-export const formatDate = (dateString: string) => {
-  const date = new Date(dateString);
+// Función para formatear fechas (acepta tanto Date como string)
+export const formatDate = (dateInput: string | Date | number) => {
+  const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
   return date.toLocaleDateString('es-ES', {
     day: 'numeric',
     month: 'long',
