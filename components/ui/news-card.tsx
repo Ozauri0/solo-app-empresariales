@@ -20,8 +20,8 @@ interface NewsCardProps {
 
 export function NewsCard({ news }: NewsCardProps) {
   // Función para generar la URL correcta para las imágenes
-  const getImageUrl = (imagePath?: string) => {
-    if (!imagePath) return null;
+  const getImageUrl = (imagePath?: string): string => {
+    if (!imagePath) return ''; // Devolver string vacío en lugar de null
     
     // Si la imagen ya es una URL completa, devolverla tal cual
     if (imagePath.startsWith('http')) {
