@@ -15,8 +15,6 @@ import AdminNav from '@/components/admin/admin-nav'
 import ProtectedRoute from '@/components/protected-route'
 import { API_BASE_URL } from '@/lib/utils'
 
-const TINYMCE_API_KEY = process.env.NEXT_PUBLIC_TINYMCE_API_KEY;
-
 interface NewsItem {
   _id: string
   title: string
@@ -140,8 +138,6 @@ export default function NewsAdminPage() {
     formData.append('image', file);
     
     try {
-      // Aquí deberías implementar tu lógica para subir la imagen a tu servidor
-      // Este es un ejemplo, ajústalo según tu API
       const response = await fetch(`${API_BASE_URL}/api/upload/image`, {
         method: 'POST',
         headers: {
@@ -440,7 +436,6 @@ export default function NewsAdminPage() {
                       <Label htmlFor="content">Contenido</Label>
                       <Editor
                         id="content"
-                        apiKey={TINYMCE_API_KEY}
                         init={{
                           height: 300,
                           menubar: false,
