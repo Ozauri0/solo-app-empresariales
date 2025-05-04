@@ -1,3 +1,6 @@
+'use client'
+
+import ProtectedRoute from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
@@ -64,58 +67,60 @@ export default function GradesPage() {
   };
 
   return (
-    <div className="container px-4 py-8 mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Mis Calificaciones</h1>
-        <Button variant="outline">Descargar Reporte</Button>
-      </div>
-
-      <Card className="p-6">
-        <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Semestre Actual</h2>
-          <p className="text-gray-500">Período: Enero - Abril 2025</p>
+    <ProtectedRoute>
+      <div className="container px-4 py-8 mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Mis Calificaciones</h1>
+          <Button variant="outline">Descargar Reporte</Button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b">
-                <th className="py-3 px-4 text-left">Código</th>
-                <th className="py-3 px-4 text-left">Asignatura</th>
-                <th className="py-3 px-4 text-center">Calificación</th>
-                <th className="py-3 px-4 text-center">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((course) => (
-                <tr key={course.id} className="border-b hover:bg-gray-50">
-                  <td className="py-3 px-4">{course.code}</td>
-                  <td className="py-3 px-4">{course.name}</td>
-                  <td className="py-3 px-4 text-center">
-                    <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${getGradeColor(course.grade)}`}>
-                      {course.grade}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(course.status)}`}>
-                      {course.status}
-                    </span>
-                  </td>
+        <Card className="p-6">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold mb-2">Semestre Actual</h2>
+            <p className="text-gray-500">Período: Enero - Abril 2025</p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100 border-b">
+                  <th className="py-3 px-4 text-left">Código</th>
+                  <th className="py-3 px-4 text-left">Asignatura</th>
+                  <th className="py-3 px-4 text-center">Calificación</th>
+                  <th className="py-3 px-4 text-center">Estado</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {courses.map((course) => (
+                  <tr key={course.id} className="border-b hover:bg-gray-50">
+                    <td className="py-3 px-4">{course.code}</td>
+                    <td className="py-3 px-4">{course.name}</td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${getGradeColor(course.grade)}`}>
+                        {course.grade}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-center">
+                      <span className={`inline-block rounded-full px-3 py-1 text-sm font-semibold ${getStatusColor(course.status)}`}>
+                        {course.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-        <div className="mt-6 flex justify-between">
-          <div>
-            <p className="font-medium">Promedio General: <span className="font-bold">52,32</span></p>
+          <div className="mt-6 flex justify-between">
+            <div>
+              <p className="font-medium">Promedio General: <span className="font-bold">52,32</span></p>
+            </div>
+            <div>
+              <p className="font-medium">Créditos Completados: <span className="font-bold">13/15</span></p>
+            </div>
           </div>
-          <div>
-            <p className="font-medium">Créditos Completados: <span className="font-bold">13/15</span></p>
-          </div>
-        </div>
-      </Card>
-    </div>
+        </Card>
+      </div>
+    </ProtectedRoute>
   );
 }

@@ -1,17 +1,86 @@
 version: '3.8'
 
 services:
-  app:
+  # Servicio de frontend (Next.js)
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: solo-app-empresariales
+    container_name: solo-app-frontend
     restart: always
     ports:
       - "3005:3005"
     environment:
       - NODE_ENV=production
       - PORT=3005
-    # Añade volúmenes si necesitas persistencia de datos
-    # volumes:
-    #   - ./data:/app/data
+    depends_on:
+      - api
+    # Montar los mismos volúmenes que la API para compartir archivos
+    volumes:
+      - shared-uploads:/app/public/uploads
+    networks:
+      - app-network
+    # Aumentar límites de recursos para el frontend
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+
+  # Servicio de backend (API)
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: solo-app-api
+    restart: unless-stopped
+    ports:
+      - "5005:5005"
+    environment:
+      - NODE_ENV=production
+      - PORT=5005
+      - MONGODB_URI=mongodb://mongodb:27017/solo-app
+      - JWT_SECRET=tu_secreto_super_seguro_para_produccion_2025
+      # Límites para subidas de archivos
+      - UPLOAD_MAX_FILE_SIZE=50MB
+      - NODE_MAX_HTTP_HEADER_SIZE=16384
+    depends_on:
+      - mongodb
+    volumes:
+      # Usar un volumen nombrado para los uploads para compartir entre contenedores
+      - shared-uploads:/app/public/uploads
+      # Montar directorio temporal para mejorar manejo de archivos grandes
+      - uploads-temp:/tmp
+    # Aumentar límites de recursos para la API
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    networks:
+      - app-network
+
+  # Servicio de base de datos (MongoDB)
+  mongodb:
+    image: mongo:latest
+    container_name: solo-app-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    # Optimizar configuración de MongoDB
+    command: --wiredTigerCacheSizeGB 1
+    environment:
+      - MONGO_INITDB_DATABASE=solo-app
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  # Volumen compartido para archivos subidos
+  shared-uploads:
+  # Volumen dedicado para archivos temporales
+  uploads-temp:
