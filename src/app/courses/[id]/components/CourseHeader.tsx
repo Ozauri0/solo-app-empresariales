@@ -76,6 +76,23 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
     if (!e.target.files || e.target.files.length === 0) return
     
     const file = e.target.files[0]
+    
+    // Verificar si el archivo es una imagen
+    if (!file.type.startsWith('image/')) {
+      toast.error('Formato no válido', {
+        description: 'Por favor seleccione un archivo de imagen válido (JPEG, PNG, etc.)'
+      })
+      return
+    }
+    
+    // Verificar tamaño del archivo (máximo 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Archivo demasiado grande', {
+        description: 'El tamaño máximo permitido para la imagen es de 5MB'
+      })
+      return
+    }
+    
     const formData = new FormData()
     formData.append('image', file)
 
@@ -89,14 +106,38 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
         return
       }
 
+      console.log(`Subiendo imagen: ${file.name}, tipo: ${file.type}, tamaño: ${file.size} bytes para el curso: ${course._id}`)
+      
       const response = await fetch(`${API_BASE_URL}/api/courses/${course._id}/image`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
+          // NO incluir 'Content-Type': 'multipart/form-data' - se agrega automáticamente
         },
         body: formData
       })
 
+      // Manejar errores de respuesta
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type')
+        let errorMessage = 'Error al actualizar la imagen del curso'
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json()
+            errorMessage = errorData.message || errorMessage
+          } else {
+            const textError = await response.text()
+            errorMessage = textError || errorMessage
+          }
+        } catch (parseError) {
+          console.error('Error al procesar la respuesta de error:', parseError)
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      // Procesar respuesta exitosa
       const data = await response.json()
       if (data.success) {
         toast.success('Imagen actualizada', {
@@ -108,11 +149,16 @@ export default function CourseHeader({ course, isOwnerOrAdmin, onCourseUpdated }
           description: data.message || 'Error al actualizar la imagen del curso'
         })
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error en la subida de imagen:', error)
       toast.error('Error de conexión', {
-        description: 'No se pudo conectar con el servidor'
+        description: error.message || 'No se pudo conectar con el servidor'
       })
     } finally {
+      // Limpiar el input de archivo para permitir subir el mismo archivo de nuevo si es necesario
+      const fileInput = document.getElementById('imageUpload') as HTMLInputElement
+      if (fileInput) fileInput.value = ''
+      
       setIsUploading(false)
     }
   }

@@ -156,24 +156,59 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
       return
     }
 
+    // Verificar tamaño del archivo (máximo 25MB)
+    if (selectedFile.size > 25 * 1024 * 1024) {
+      toast.error('Archivo demasiado grande', {
+        description: 'El tamaño máximo permitido es de 25MB'
+      })
+      return
+    }
+
     try {
       setIsUploading(true)
       const token = localStorage.getItem('token')
       if (!token) return
 
+      // Crear el FormData con los campos necesarios
       const formData = new FormData()
       formData.append('title', title)
       formData.append('description', description)
       formData.append('file', selectedFile)
 
+      console.log(`Subiendo archivo: ${selectedFile.name}, tipo: ${selectedFile.type}, tamaño: ${selectedFile.size} bytes`)
+      
+      // Realizar la solicitud sin incluir Content-Type en los headers
+      // (fetch lo establecerá automáticamente con el boundary correcto)
       const response = await fetch(`${API_BASE_URL}/api/courses/${courseId}/materials`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
+          // NO incluir 'Content-Type': 'multipart/form-data' - se agrega automáticamente
         },
         body: formData
       })
 
+      // Si la respuesta no es correcta, intentamos obtener el mensaje de error
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type')
+        let errorMessage = 'Error al subir el material'
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json()
+            errorMessage = errorData.message || errorMessage
+          } else {
+            const textError = await response.text()
+            errorMessage = textError || errorMessage
+          }
+        } catch (parseError) {
+          console.error('Error al procesar la respuesta de error:', parseError)
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      // Procesar la respuesta exitosa
       const data = await response.json()
       
       if (data.success) {
@@ -183,7 +218,6 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
         setTitle('')
         setDescription('')
         setSelectedFile(null)
-        setIsUploading(false)
         setIsAddingMaterial(false)
         
         // Resetear el input de archivo
@@ -196,9 +230,10 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
           description: data.message || 'Error al subir el material'
         })
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error en la subida:', error)
       toast.error('Error de conexión', {
-        description: 'No se pudo conectar con el servidor'
+        description: error.message || 'No se pudo conectar con el servidor'
       })
     } finally {
       setIsUploading(false)
@@ -216,6 +251,14 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
       return
     }
 
+    // Verificar tamaño del archivo si se está subiendo uno nuevo
+    if (editFile && editFile.size > 25 * 1024 * 1024) {
+      toast.error('Archivo demasiado grande', {
+        description: 'El tamaño máximo permitido es de 25MB'
+      })
+      return
+    }
+
     try {
       setIsUpdating(true)
       const token = localStorage.getItem('token')
@@ -227,6 +270,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
       
       // Solo añadir archivo si se ha seleccionado uno nuevo
       if (editFile) {
+        console.log(`Actualizando con nuevo archivo: ${editFile.name}, tipo: ${editFile.type}, tamaño: ${editFile.size} bytes`)
         formData.append('file', editFile)
       }
 
@@ -234,10 +278,32 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`
+          // NO incluir 'Content-Type': 'multipart/form-data' - se agrega automáticamente
         },
         body: formData
       })
 
+      // Si la respuesta no es correcta, intentamos obtener el mensaje de error
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type')
+        let errorMessage = 'Error al actualizar el material'
+        
+        try {
+          if (contentType && contentType.includes('application/json')) {
+            const errorData = await response.json()
+            errorMessage = errorData.message || errorMessage
+          } else {
+            const textError = await response.text()
+            errorMessage = textError || errorMessage
+          }
+        } catch (parseError) {
+          console.error('Error al procesar la respuesta de error:', parseError)
+        }
+        
+        throw new Error(errorMessage)
+      }
+
+      // Procesar la respuesta exitosa
       const data = await response.json()
       
       if (data.success) {
@@ -256,9 +322,10 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
           description: data.message || 'Error al actualizar el material'
         })
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error en la actualización:', error)
       toast.error('Error de conexión', {
-        description: 'No se pudo conectar con el servidor'
+        description: error.message || 'No se pudo conectar con el servidor'
       })
     } finally {
       setIsUpdating(false)
