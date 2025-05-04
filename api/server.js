@@ -62,24 +62,84 @@ const fileUploadMiddleware = fileUpload({
 app.use('/api/upload', fileUploadMiddleware);
 app.use('/api/news', fileUploadMiddleware);
 
-// Configuración mejorada de archivos estáticos
-// Configuración principal para la ruta /uploads
+// Middleware para debugging de rutas de archivos estáticos (solo en desarrollo)
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.url.startsWith('/uploads/')) {
+      console.log(`Solicitud de archivo estático: ${req.url}`);
+    }
+    next();
+  });
+}
+
+// CONFIGURACIÓN MEJORADA DE ARCHIVOS ESTÁTICOS
+// Middleware para verificar directorios de uploads
+const ensureUploadDirs = () => {
+  const dirs = [
+    path.join(__dirname, '..', 'public'),
+    path.join(__dirname, '..', 'public', 'uploads'),
+    path.join(__dirname, '..', 'public', 'uploads', 'courses'),
+    path.join(__dirname, '..', 'public', 'uploads', 'course-materials'),
+    path.join(__dirname, '..', 'public', 'uploads', 'news')
+  ];
+
+  for (const dir of dirs) {
+    if (!fs.existsSync(dir)) {
+      console.log(`Creando directorio: ${dir}`);
+      try {
+        fs.mkdirSync(dir, { recursive: true, mode: 0o777 });
+      } catch (err) {
+        console.error(`Error al crear directorio ${dir}:`, err);
+      }
+    }
+  }
+};
+
+// Asegurar que los directorios existan
+ensureUploadDirs();
+
+// Primer intento: servir archivos desde las rutas principales con opciones completas
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads'), {
-  maxAge: '1d', // Caché por 1 día
-  etag: true
+  maxAge: '1d',
+  etag: true,
+  dotfiles: 'ignore',
+  fallthrough: true,
+  index: false,
+  redirect: false
 }));
 
-// Configuración específica para materiales de curso
-app.use('/uploads/course-materials', express.static(path.join(__dirname, '..', 'public', 'uploads', 'course-materials'), {
-  maxAge: '1d',
-  etag: true
-}));
+// Segundo intento: configuración específica por cada subdirectorio importante
+const uploadDirs = ['courses', 'course-materials', 'news'];
+uploadDirs.forEach(dir => {
+  app.use(`/uploads/${dir}`, express.static(path.join(__dirname, '..', 'public', 'uploads', dir), {
+    maxAge: '1d',
+    etag: true
+  }));
+});
 
-// Configuración específica para imágenes de cursos
-app.use('/uploads/courses', express.static(path.join(__dirname, '..', 'public', 'uploads', 'courses'), {
-  maxAge: '1d',
-  etag: true
-}));
+// Ruta alternativa para servir archivos si la ruta principal falla
+app.get('/file/:type/:filename', (req, res) => {
+  const { type, filename } = req.params;
+  const filePath = path.join(__dirname, '..', 'public', 'uploads', type, filename);
+  
+  try {
+    if (fs.existsSync(filePath)) {
+      return res.sendFile(filePath);
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: 'Archivo no encontrado'
+      });
+    }
+  } catch (err) {
+    console.error(`Error al servir archivo ${filePath}:`, err);
+    return res.status(500).json({
+      success: false,
+      message: 'Error al servir el archivo',
+      error: err.message
+    });
+  }
+});
 
 // Ruta adicional para debugging y diagnóstico
 app.get('/check-file/:folder/:filename', (req, res) => {
@@ -98,10 +158,24 @@ app.get('/check-file/:folder/:filename', (req, res) => {
     }
     
     console.log(`Archivo encontrado: ${filePath}`);
-    return res.json({
-      success: true,
-      message: 'Archivo encontrado',
-      filePath: filePath
+    // Devolver información del archivo
+    fs.stat(filePath, (statErr, stats) => {
+      if (statErr) {
+        return res.status(500).json({
+          success: false,
+          message: 'Error al obtener información del archivo',
+          error: statErr.message
+        });
+      }
+      
+      return res.json({
+        success: true,
+        message: 'Archivo encontrado',
+        filePath: filePath,
+        fileSize: stats.size,
+        modifiedTime: stats.mtime,
+        permissions: stats.mode
+      });
     });
   });
 });

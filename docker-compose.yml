@@ -15,6 +15,9 @@ services:
       - PORT=3005
     depends_on:
       - api
+    # Montar los mismos volúmenes que la API para compartir archivos
+    volumes:
+      - shared-uploads:/app/public/uploads
     networks:
       - app-network
     # Aumentar límites de recursos para el frontend
@@ -43,7 +46,8 @@ services:
     depends_on:
       - mongodb
     volumes:
-      - ./api/public:/app/public
+      # Usar un volumen nombrado para los uploads para compartir entre contenedores
+      - shared-uploads:/app/public/uploads
       # Montar directorio temporal para mejorar manejo de archivos grandes
       - uploads-temp:/tmp
     # Aumentar límites de recursos para la API
@@ -63,7 +67,7 @@ services:
       - "27017:27017"
     volumes:
       - mongodb-data:/data/db
-      # Optimizar configuración de MongoDB
+    # Optimizar configuración de MongoDB
     command: --wiredTigerCacheSizeGB 1
     environment:
       - MONGO_INITDB_DATABASE=solo-app
@@ -76,5 +80,7 @@ networks:
 
 volumes:
   mongodb-data:
+  # Volumen compartido para archivos subidos
+  shared-uploads:
   # Volumen dedicado para archivos temporales
   uploads-temp:
