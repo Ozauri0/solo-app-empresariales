@@ -8,8 +8,8 @@ RUN apk add --no-cache bash curl
 # Copiar archivos de dependencias
 COPY package*.json ./
 
-# Instalar dependencias con configuraciones de npm optimizadas para producción
-RUN npm ci --only=production
+# Instalar dependencias (cambiando npm ci por npm install)
+RUN npm install --omit=dev
 
 # Copiar el código fuente
 COPY . .
