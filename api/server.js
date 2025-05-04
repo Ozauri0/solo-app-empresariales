@@ -9,14 +9,20 @@ const fileUpload = require('express-fileupload'); // Añadir express-fileupload
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5005;
 
 // Configuración de CORS
 const allowedOrigins = [
   'http://localhost:3000', // Origen local estándar de Next.js
-  'http://192.168.1.167:3000', // IP local para acceso desde otros dispositivos (asumiendo que Next.js corre en el puerto 3000)
-  'http://192.168.1.167:5000', // Permitir solicitudes desde la propia API si es necesario
-  'https://lp.christianferrer.me' // URL de producción
+  'http://localhost:3005', // Puerto configurado para producción
+  'http://192.168.1.167:3000',
+  'http://192.168.1.167:3005', 
+  'http://192.168.1.167:5000',
+  'http://192.168.1.167:5005', // Nuevo puerto de API
+  'https://lp.christianferrer.me',
+  // Permitir solicitudes internas en Docker
+  'http://frontend:3005',
+  'http://api:5005'
 ];
 
 const corsOptions = {

@@ -1,17 +1,58 @@
 version: '3.8'
 
 services:
-  app:
+  # Servicio de frontend (Next.js)
+  frontend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: solo-app-empresariales
+    container_name: solo-app-frontend
     restart: always
     ports:
       - "3005:3005"
     environment:
       - NODE_ENV=production
       - PORT=3005
-    # Añade volúmenes si necesitas persistencia de datos
-    # volumes:
-    #   - ./data:/app/data
+    depends_on:
+      - api
+    networks:
+      - app-network
+
+  # Servicio de backend (API)
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: solo-app-api
+    restart: always
+    ports:
+      - "5005:5005"
+    environment:
+      - NODE_ENV=production
+      - PORT=5005
+      - MONGODB_URI=mongodb://mongodb:27017/solo-app
+    depends_on:
+      - mongodb
+    volumes:
+      - ./api/public:/app/public
+    networks:
+      - app-network
+
+  # Servicio de base de datos (MongoDB)
+  mongodb:
+    image: mongo:latest
+    container_name: solo-app-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb-data:/data/db
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:

@@ -1,7 +1,8 @@
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+// Actualizada la URL base de la API para usar el puerto 5005
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5005';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
