@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const path = require('path');
+const fs = require('fs'); // Importar fs para manejo de archivos
 const fileUpload = require('express-fileupload'); // Añadir express-fileupload
 
 // Cargar variables de entorno
@@ -61,11 +62,43 @@ const fileUploadMiddleware = fileUpload({
 app.use('/api/upload', fileUploadMiddleware);
 app.use('/api/news', fileUploadMiddleware);
 
-// Configurar archivos estáticos con caché optimizada
+// Configuración mejorada de archivos estáticos
+// Configuración principal para la ruta /uploads
 app.use('/uploads', express.static(path.join(__dirname, '..', 'public', 'uploads'), {
   maxAge: '1d', // Caché por 1 día
   etag: true
 }));
+
+// Configuración específica para materiales de curso
+app.use('/uploads/course-materials', express.static(path.join(__dirname, '..', 'public', 'uploads', 'course-materials'), {
+  maxAge: '1d',
+  etag: true
+}));
+
+// Ruta adicional para debugging y diagnóstico
+app.get('/check-file/:folder/:filename', (req, res) => {
+  const { folder, filename } = req.params;
+  const filePath = path.join(__dirname, '..', 'public', 'uploads', folder, filename);
+  
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) {
+      console.log(`Archivo no encontrado: ${filePath}`);
+      return res.status(404).json({
+        success: false,
+        message: 'Archivo no encontrado',
+        requestedPath: filePath,
+        error: err.message
+      });
+    }
+    
+    console.log(`Archivo encontrado: ${filePath}`);
+    return res.json({
+      success: true,
+      message: 'Archivo encontrado',
+      filePath: filePath
+    });
+  });
+});
 
 // Importar rutas
 const userRoutes = require('./routes/userRoutes');

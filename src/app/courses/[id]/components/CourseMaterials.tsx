@@ -145,6 +145,23 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
     return '📁'
   }
 
+  // Función para construir la URL correcta para descargar archivos
+  const getFileDownloadUrl = (fileUrl: string): string => {
+    // Si la URL ya es absoluta (comienza con http)
+    if (fileUrl.startsWith('http')) {
+      return fileUrl;
+    }
+    
+    // Si API_BASE_URL está definido, usarlo como prefijo
+    if (API_BASE_URL) {
+      return `${API_BASE_URL}${fileUrl}`;
+    }
+    
+    // En producción (API_BASE_URL vacío), usar la misma base que la aplicación
+    // Esto asume que estás en el mismo dominio que la API
+    return fileUrl;
+  };
+
   // Subir material del curso
   const handleUploadMaterial = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -496,7 +513,7 @@ export default function CourseMaterials({ courseId, materials, userRole, fetchMa
                         </h3>
                         <div className="flex items-center">
                           <a 
-                            href={`${API_BASE_URL}${material.fileUrl}`} 
+                            href={getFileDownloadUrl(material.fileUrl)} 
                             target="_blank" 
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 rounded-md px-2 py-1 text-sm"
