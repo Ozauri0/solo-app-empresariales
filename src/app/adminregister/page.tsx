@@ -38,6 +38,7 @@ export default function AdminRegisterPage() {
       // Omitir confirmPassword del objeto a enviar
       const { confirmPassword, ...dataToSend } = formData
 
+      // Usamos la ruta relativa para la API que ahora pasará por el proxy de Next.js
       const response = await fetch(`${API_BASE_URL}/api/users/register`, {
         method: "POST",
         headers: {
