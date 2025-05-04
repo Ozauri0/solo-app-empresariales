@@ -197,25 +197,8 @@ exports.createCourseMaterial = async (req, res) => {
       });
     }
     
-    // Asegurar que el directorio de destino exista
-    const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'course-materials');
-    if (!fs.existsSync(uploadDir)) {
-      console.log(`Creando directorio de materiales: ${uploadDir}`);
-      try {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      } catch (mkdirError) {
-        console.error(`Error al crear directorio: ${mkdirError.message}`);
-        return res.status(500).json({
-          success: false,
-          message: 'Error al crear directorio para guardar el archivo',
-          error: mkdirError.message
-        });
-      }
-    }
-    
     // Crear URL para el archivo
     const fileUrl = `/uploads/course-materials/${req.file.filename}`;
-    console.log(`Ruta del archivo: ${fileUrl}`);
     
     // Crear el nuevo material
     const material = new CourseMaterial({

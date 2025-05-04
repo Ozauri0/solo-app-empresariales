@@ -17,19 +17,33 @@ const {
 // Configurar almacenamiento de archivos con multer
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'course-materials');
-    
-    // Crear directorio si no existe
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
+    try {
+      const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'course-materials');
+      console.log('Directorio de materiales:', uploadDir);
+      
+      // Crear directorio si no existe con permisos adecuados
+      if (!fs.existsSync(uploadDir)) {
+        console.log('Creando directorio de materiales...');
+        fs.mkdirSync(uploadDir, { recursive: true, mode: 0o775 });
+        console.log('Directorio creado correctamente');
+      }
+      
+      cb(null, uploadDir);
+    } catch (error) {
+      console.error('Error al crear directorio para materiales:', error);
+      cb(error);
     }
-    
-    cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // Generar nombre único para el archivo
-    const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
-    cb(null, uniqueName);
+    try {
+      // Generar nombre único para el archivo
+      const uniqueName = `${uuidv4()}${path.extname(file.originalname)}`;
+      console.log('Nombre de archivo generado:', uniqueName);
+      cb(null, uniqueName);
+    } catch (error) {
+      console.error('Error al generar nombre de archivo:', error);
+      cb(error);
+    }
   }
 });
 
@@ -52,10 +66,13 @@ const fileFilter = (req, file, cb) => {
     'application/x-rar-compressed'
   ];
   
+  console.log('Tipo MIME del archivo:', file.mimetype);
+  
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Tipo de archivo no permitido'), false);
+    console.log('Tipo de archivo no permitido:', file.mimetype);
+    cb(new Error(`Tipo de archivo no permitido: ${file.mimetype}`), false);
   }
 };
 
@@ -66,11 +83,35 @@ const upload = multer({
   limits: { fileSize: 25 * 1024 * 1024 } // 25 MB max
 });
 
+// Middleware para manejo de errores de multer
+const handleMulterError = (err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    console.error('Error de Multer:', err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'El archivo excede el tamaño máximo permitido (25MB)'
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: `Error en la subida: ${err.message}`
+    });
+  } else if (err) {
+    console.error('Error en middleware de subida:', err);
+    return res.status(400).json({
+      success: false,
+      message: err.message
+    });
+  }
+  next();
+};
+
 // Rutas para materiales de un curso
 router.get('/courses/:courseId/materials', protect, getCourseMaterials);
 router.get('/courses/:courseId/materials/:materialId', protect, getCourseMaterial);
-router.post('/courses/:courseId/materials', protect, authorize('teacher', 'admin'), upload.single('file'), createCourseMaterial);
-router.put('/courses/:courseId/materials/:materialId', protect, authorize('teacher', 'admin'), upload.single('file'), updateCourseMaterial);
+router.post('/courses/:courseId/materials', protect, authorize('teacher', 'admin'), upload.single('file'), handleMulterError, createCourseMaterial);
+router.put('/courses/:courseId/materials/:materialId', protect, authorize('teacher', 'admin'), upload.single('file'), handleMulterError, updateCourseMaterial);
 router.delete('/courses/:courseId/materials/:materialId', protect, authorize('teacher', 'admin'), deleteCourseMaterial);
 
 module.exports = router;

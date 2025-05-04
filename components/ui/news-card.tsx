@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { formatDate } from "@/lib/utils"
+import { formatDate, API_BASE_URL } from "@/lib/utils"
 
 interface NewsItem {
   _id: string
@@ -19,6 +19,24 @@ interface NewsCardProps {
 }
 
 export function NewsCard({ news }: NewsCardProps) {
+  // Función para generar la URL correcta para las imágenes
+  const getImageUrl = (imagePath?: string) => {
+    if (!imagePath) return null;
+    
+    // Si la imagen ya es una URL completa, devolverla tal cual
+    if (imagePath.startsWith('http')) {
+      return imagePath;
+    }
+    
+    // Si es una ruta absoluta (comienza con /), añadir la URL base de la API
+    if (imagePath.startsWith('/')) {
+      return `${API_BASE_URL}${imagePath}`;
+    }
+    
+    // En cualquier otro caso, devolver la ruta como está
+    return imagePath;
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -33,7 +51,7 @@ export function NewsCard({ news }: NewsCardProps) {
               {news.image && (
                 <div className="my-2">
                   <img 
-                    src={news.image} 
+                    src={getImageUrl(news.image)} 
                     alt={news.title} 
                     className="rounded-md w-full max-h-48 object-cover"
                   />
