@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { User, Mail, Book, Calendar, MapPin, Phone, Lock, Key, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { API_BASE_URL } from "@/lib/utils"
 
 export default function ProfilePage() {
   // Definiendo interfaces para el tipo de sesión activa
@@ -74,7 +75,7 @@ export default function ProfilePage() {
         const token = localStorage.getItem('token');
         if (!token) return;
 
-        const response = await fetch('http://localhost:5000/api/users/profile', {
+        const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -128,7 +129,7 @@ export default function ProfilePage() {
 
       const { currentPassword, newPassword, confirmPassword, activeSessions, ...userData } = user;
       
-      const response = await fetch('http://localhost:5000/api/users/profile', {
+      const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -188,7 +189,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/users/password', {
+      const response = await fetch(`${API_BASE_URL}/api/users/password`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -236,7 +237,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/users/session/close', {
+      const response = await fetch(`${API_BASE_URL}/api/users/session/close`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +281,7 @@ export default function ProfilePage() {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/users/session/close-all', {
+      const response = await fetch(`${API_BASE_URL}/api/users/session/close-all`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
